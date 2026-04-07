@@ -32,9 +32,9 @@ pub async fn create_server(app_handle: AppHandle){
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
-    axum::serve(listener, app).await.unwrap()
-}
+    axum::serve(listener, app).await.unwrap();
 
+}
 
 async fn add_to_filelist(State(app): State<AppHandle>, Json(file_pt): Json<UploadPath>)->StatusCode {
     let state = app.state::<Mutex<AllowedFileList>>();
