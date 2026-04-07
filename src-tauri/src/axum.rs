@@ -1,6 +1,6 @@
 use std::{fs::{metadata}, os::windows::fs::MetadataExt, path::Path};
 
-use axum::{Router, extract::{Json, State}, http::StatusCode, routing::post};
+use axum::{Router, extract::{Json, State, Query}, http::StatusCode, routing::{post, get}};
 use futures_util::{lock::Mutex};
 use serde::{Deserialize};
 use tauri::{Manager, AppHandle};
@@ -11,7 +11,8 @@ use uuid::Uuid;
 pub struct FileInfo {
     pub name: String,
     pub size: u64,
-    pub id: Uuid
+    pub id: Uuid,
+    pub path: String
 }
 
 pub struct AllowedFileList {
@@ -25,7 +26,7 @@ struct UploadPath {
 
 #[tokio::main]
 pub async fn create_server(app_handle: AppHandle){
-    let app = Router::new().route("/upload", post(add_to_filelist)).with_state(app_handle);
+    let app = Router::new().route("/upload", post(add_to_filelist)).route("/download", get(download_from_filelist)).with_state(app_handle);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
@@ -54,7 +55,14 @@ async fn add_to_filelist(State(app): State<AppHandle>, Json(file_pt): Json<Uploa
         None => return StatusCode::NOT_FOUND
     };
 
-    allowed.list.lock().await.push(FileInfo { name: name, size: size, id: Uuid::new_v4() });
+    allowed.list.lock().await.push(FileInfo { name: name, size: size, id: Uuid::new_v4(), path: file_pt.path });
 
     StatusCode::CREATED
+}
+
+#[derive(Deserialize)]
+struct FileId (String);
+
+async fn download_from_filelist(State(app): State<AppHandle>, Query(file_id): Query<FileId>)->StatusCode{
+    StatusCode::ACCEPTED
 }
