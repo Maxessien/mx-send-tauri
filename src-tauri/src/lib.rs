@@ -7,8 +7,9 @@ use serde::Serialize;
 use crate::axum::AllowedFileList;
 
 pub(crate) mod axum;
+pub(crate) mod websocket;
 
-pub struct SessionId(Mutex<Uuid>);
+pub struct SessionId(Uuid);
 
 #[derive(Serialize)]
 struct CreateConnRes {
@@ -19,18 +20,17 @@ struct CreateConnRes {
 #[tauri::command]
 async fn create_conn_server<'a>(
     app_handle: tauri::AppHandle,
-    state: tauri::State<'a, SessionId>,
+    state: tauri::State<'a, Mutex<SessionId>>,
 ) -> Result<CreateConnRes, String> {
     axum::create_server(app_handle);
-    let id_state = &state.inner().0;
-    let mut guard = id_state.lock().await;
-    *guard = Uuid::new_v4();
+    let mut id_state = state.lock().await;
+    id_state.0 = Uuid::new_v4();
     let ip = match local_ip() {
         Ok(addr) => addr.to_string(),
         Err(_) => return Err(String::from("No Ip address found")),
     };
     let res = CreateConnRes {
-        session_id: *guard,
+        session_id: id_state.0,
         ip_address: ip,
     };
     Ok(res)
@@ -41,10 +41,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![create_conn_server])        
-        .manage(AllowedFileList {
-            list: Mutex::new(Vec::new()),
-        })
-        .manage(SessionId(Mutex::new(Uuid::new_v4())))
+        .manage(Mutex::new(AllowedFileList {
+            list: Vec::new(),
+        }))
+        .manage(Mutex::new(SessionId(Uuid::new_v4())))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

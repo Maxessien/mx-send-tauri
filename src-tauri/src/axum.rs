@@ -3,10 +3,10 @@ use std::path::Path; // Extract only the filename, stripping any path components
 use axum::{
     body::{Body, Bytes},
     extract::{Json, Query, Request, State},
-    http::{header, Response, StatusCode},
+    http::{header, Method, Response, StatusCode},
     middleware::{self, Next},
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, post, any},
     Router,
 };
 use futures_util::lock::Mutex;
@@ -17,9 +17,11 @@ use tokio::{
     io::AsyncWriteExt,
 };
 use tokio_util::io::ReaderStream;
-// use tokio::fs::{};
+use tower::ServiceBuilder;
+use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
 
+use crate::websocket;
 use crate::SessionId;
 
 pub struct FileInfo {
@@ -30,7 +32,7 @@ pub struct FileInfo {
 }
 
 pub struct AllowedFileList {
-    pub list: Mutex<Vec<FileInfo>>,
+    pub list: Vec<FileInfo>,
 }
 
 #[derive(Deserialize)]
@@ -66,27 +68,25 @@ struct UploadFileQuery {
 
 #[tokio::main]
 pub async fn create_server(app_handle: AppHandle) {
-    let app = Router::new()
-        .route("/upload", post(add_to_filelist).route_layer(middleware::from_fn_with_state(
-                app_handle.clone(),
-                verify_session_id,
-            )))
-        .route("/download", get(download_from_filelist).route_layer(middleware::from_fn_with_state(
-                app_handle.clone(),
-                verify_session_id,
-            )))
-        .route(
-            "/receiver/upload",
-            post(upload_file).route_layer(middleware::from_fn_with_state(
-                app_handle.clone(),
-                verify_session_id,
-            )),
-        )
-        .with_state(app_handle);
+    tauri::async_runtime::spawn(async move {
+        let cors = CorsLayer::new()
+            .allow_methods([Method::POST, Method::GET])
+            .allow_origin(Any);
+        let app =
+            Router::new()
+                .route("/upload", post(add_to_filelist))
+                .route("/download", get(download_from_filelist))
+                .route("/receiver/upload", post(upload_file))
+                .route("/ws", any(websocket::ws_handler))
+                .route_layer(ServiceBuilder::new().layer(cors).layer(
+                    middleware::from_fn_with_state(app_handle.clone(), verify_session_id),
+                ))
+                .with_state(app_handle);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
-    axum::serve(listener, app).await.unwrap();
+        axum::serve(listener, app).await.unwrap();
+    });
 }
 
 async fn verify_session_id(
@@ -108,7 +108,7 @@ async fn verify_session_id(
 
     let state = app.state::<Mutex<SessionId>>();
     let state_guard = state.lock().await;
-    let sess_guard = state_guard.0.lock().await;
+    let sess_guard = state_guard.0;
 
     let sess_id = sess_guard.to_string();
 
@@ -165,9 +165,9 @@ async fn upload_file(
 async fn add_to_filelist(
     State(app): State<AppHandle>,
     Json(file_pt): Json<UploadPath>,
-) -> StatusCode {
+) -> (StatusCode, String) {
     let state = app.state::<Mutex<AllowedFileList>>();
-    let allowed = state.lock().await;
+    let mut allowed = state.lock().await;
 
     let path = Path::new(&file_pt.path);
     let metadata = metadata(&file_pt.path).await;
@@ -175,25 +175,27 @@ async fn add_to_filelist(
 
     let size = match metadata {
         Ok(meta) => meta.len(),
-        Err(_) => return StatusCode::NOT_FOUND,
+        Err(_) => return (StatusCode::NOT_FOUND, String::from("File not found")),
     };
 
     let name = match file {
         Some(f) => match f.to_str() {
             Some(str) => String::from(str),
-            None => return StatusCode::NOT_FOUND,
+            None => return (StatusCode::NOT_FOUND, String::from("File not found")),
         },
-        None => return StatusCode::NOT_FOUND,
+        None => return (StatusCode::NOT_FOUND, String::from("File not found")),
     };
 
-    allowed.list.lock().await.push(FileInfo {
+    let file_id = Uuid::new_v4();
+
+    allowed.list.push(FileInfo {
         name: name,
         size: size,
-        id: Uuid::new_v4(),
+        id: file_id,
         path: file_pt.path,
     });
 
-    StatusCode::CREATED
+    (StatusCode::CREATED, file_id.to_string())
 }
 
 async fn download_from_filelist(
@@ -202,8 +204,7 @@ async fn download_from_filelist(
 ) -> (StatusCode, impl IntoResponse) {
     let state = app.state::<Mutex<AllowedFileList>>();
     let allowed = state.lock().await;
-    let list_guard = allowed.list.lock().await;
-    let file_info = list_guard.iter().find(|item| item.id == file_id.id);
+    let file_info = allowed.list.iter().find(|item| item.id == file_id.id);
 
     let file = match file_info {
         Some(info) => {
