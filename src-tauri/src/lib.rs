@@ -4,12 +4,11 @@ use futures_util::lock::Mutex;
 use local_ip_address::local_ip;
 use uuid::Uuid;
 use serde::Serialize;
-
 use crate::axum::AllowedFileList;
 
 pub(crate) mod axum;
 
-struct SessionId(Uuid);
+pub struct SessionId(Mutex<Uuid>);
 
 #[derive(Serialize)]
 struct CreateConnRes {
@@ -17,18 +16,21 @@ struct CreateConnRes {
     ip_address: String,
 }
 
-
 #[tauri::command]
 async fn create_conn_server<'a>(
+    app_handle: tauri::AppHandle,
     state: tauri::State<'a, SessionId>,
 ) -> Result<CreateConnRes, String> {
-    let id = state.0.clone();
+    axum::create_server(app_handle);
+    let id_state = &state.inner().0;
+    let mut guard = id_state.lock().await;
+    *guard = Uuid::new_v4();
     let ip = match local_ip() {
         Ok(addr) => addr.to_string(),
         Err(_) => return Err(String::from("No Ip address found")),
     };
     let res = CreateConnRes {
-        session_id: id,
+        session_id: *guard,
         ip_address: ip,
     };
     Ok(res)
@@ -42,7 +44,7 @@ pub fn run() {
         .manage(AllowedFileList {
             list: Mutex::new(Vec::new()),
         })
-        .manage(SessionId(Uuid::new_v4()))
+        .manage(SessionId(Mutex::new(Uuid::new_v4())))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

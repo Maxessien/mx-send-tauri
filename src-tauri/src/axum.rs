@@ -2,8 +2,9 @@ use std::path::Path; // Extract only the filename, stripping any path components
 
 use axum::{
     body::{Body, Bytes},
-    extract::{Json, Query, State},
+    extract::{Json, Query, Request, State},
     http::{header, Response, StatusCode},
+    middleware::{self, Next},
     response::IntoResponse,
     routing::{get, post},
     Router,
@@ -18,6 +19,8 @@ use tokio::{
 use tokio_util::io::ReaderStream;
 // use tokio::fs::{};
 use uuid::Uuid;
+
+use crate::SessionId;
 
 pub struct FileInfo {
     pub name: String,
@@ -64,14 +67,58 @@ struct UploadFileQuery {
 #[tokio::main]
 pub async fn create_server(app_handle: AppHandle) {
     let app = Router::new()
-        .route("/upload", post(add_to_filelist))
-        .route("/download", get(download_from_filelist))
-        .route("/receiver/upload", post(upload_file))
+        .route("/upload", post(add_to_filelist).route_layer(middleware::from_fn_with_state(
+                app_handle.clone(),
+                verify_session_id,
+            )))
+        .route("/download", get(download_from_filelist).route_layer(middleware::from_fn_with_state(
+                app_handle.clone(),
+                verify_session_id,
+            )))
+        .route(
+            "/receiver/upload",
+            post(upload_file).route_layer(middleware::from_fn_with_state(
+                app_handle.clone(),
+                verify_session_id,
+            )),
+        )
         .with_state(app_handle);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn verify_session_id(
+    State(app): State<AppHandle>,
+    req: Request<Body>,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    let header = match req.headers().get(header::AUTHORIZATION) {
+        Some(h) => h.to_str(),
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+    let id = match header {
+        Ok(id_str) => match id_str.strip_prefix("Bearer") {
+            Some(stripped_id) => stripped_id,
+            None => return Err(StatusCode::UNAUTHORIZED),
+        },
+        Err(_) => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    let state = app.state::<Mutex<SessionId>>();
+    let state_guard = state.lock().await;
+    let sess_guard = state_guard.0.lock().await;
+
+    let sess_id = sess_guard.to_string();
+
+    let is_authorised = sess_id == String::from(id);
+
+    if !is_authorised {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    Ok(next.run(req).await)
 }
 
 async fn upload_file(
@@ -95,7 +142,7 @@ async fn upload_file(
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
-    
+
     download_dir.push(format!("mxsend/{}/{}", sub_folder, safe_name));
 
     if let Some(parent) = download_dir.parent() {
