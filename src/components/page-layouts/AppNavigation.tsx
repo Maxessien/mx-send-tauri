@@ -1,51 +1,39 @@
 import { FaFile, FaImage, FaMusic, FaVideo } from "react-icons/fa";
-import { FileResType } from "../../store-slices/AllFilesSlice";
-import { ReactNode } from "react";
+import { JSX, ReactNode } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../store";
+import { changeTab } from "../../store-slices/activeTabs";
 
-const AppNavigation = ({ activeTab, children }: { activeTab: FileResType, children: ReactNode }) => {
+const NavItem = ({ icon, title }: { icon: JSX.Element; title: string }) => {
+  const { activeTab } = useSelector((state: RootState) => state.activeTab);
   const listStyles = (isActive: boolean) =>
-    `w-full hover:bg-(--main-tertiary) p-3 rounded-full md:rounded-md flex justify-center sm:justify-start items-center ${isActive ? "text-(--main-primary) bg-(--main-primary-lighter) border-2 border-(--main-primary)" : ""} text-lg font-medium`;
+    `w-full hover:bg-(--main-tertiary) p-3 rounded-full md:rounded-md ${isActive ? "text-(--main-primary) bg-(--main-primary-lighter) border-2 border-(--main-primary)" : ""} text-lg font-medium`;
+  const dispatch = useDispatch();
+  return (
+    <li
+      onClick={() => dispatch(changeTab("audio"))}
+      className={listStyles(activeTab === "audio")}
+    >
+      <span className="flex items-center justify-center sm:hidden">{icon}</span>
+      <span className="hidden sm:flex sm:justify-start items-center gap-2 w-full">
+        <span>{icon}</span> <span>{title}</span>
+      </span>
+    </li>
+  );
+};
+
+const AppNavigation = ({ children }: { children: ReactNode }) => {
   return (
     <div>
       <nav className="w-full px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none">
         <ul>
-          <li className={listStyles(activeTab === "audio")}>
-            <span>
-              <FaVideo />
-            </span>
-            <span>
-              <FaMusic /> Audio
-            </span>
-          </li>
-          <li className={listStyles(activeTab === "video")}>
-            <span>
-              <FaVideo />
-            </span>
-            <span>
-              <FaVideo /> Video
-            </span>
-          </li>
-          <li className={listStyles(activeTab === "images")}>
-            <span>
-              <FaVideo />
-            </span>
-            <span>
-              <FaImage /> Image
-            </span>
-          </li>
-          <li className={listStyles(activeTab === "document")}>
-            <span>
-              <FaVideo />
-            </span>
-            <span>
-              <FaFile /> Document
-            </span>
-          </li>
+          <NavItem icon={<FaMusic />} title="Audio" />
+          <NavItem icon={<FaVideo />} title="Video" />
+          <NavItem icon={<FaImage />} title="Immage" />
+          <NavItem icon={<FaFile />} title="Document" />
         </ul>
       </nav>
-      <main>
-        {children}
-      </main>
+      <main>{children}</main>
     </div>
   );
 };
