@@ -28,8 +28,7 @@ pub struct AllowedFileList {
 
 
 
-#[tokio::main]
-pub async fn create_server(app_handle: AppHandle) {
+pub fn create_server(app_handle: AppHandle) {
     tauri::async_runtime::spawn(async move {
         let cors = CorsLayer::new()
             .allow_methods([Method::POST, Method::GET])

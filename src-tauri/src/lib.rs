@@ -7,6 +7,7 @@ use futures_util::lock::Mutex;
 use local_ip_address::local_ip;
 use serde::Serialize;
 use tauri::Manager;
+use tokio::{fs::File, io::AsyncReadExt};
 use uuid::Uuid;
 use walkdir::{DirEntry, WalkDir};
 
@@ -58,10 +59,7 @@ pub const VIDEO_EXTS: &[&str] = &[
     "ogv", "asf", "rm", "rmvb", "ts", "m2ts", "mts", "divx", "f4v", "qt",
 ];
 
-pub const IMAGE_EXTS: &[&str] = &[
-    "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "tiff", "tif", "avif", "heic",
-    "heif", "raw", "cr2", "nef", "arw", "dng", "psd", "ai", "eps",
-];
+pub const IMAGE_EXTS: &[&str] = &["jpg", "jpeg", "png", "gif", "webp"];
 
 pub const DOCUMENT_EXTS: &[&str] = &[
     "pdf", "doc", "docx", "txt", "rtf", "odt", "pages", "wpd", "tex", "epub", "mobi", "azw",
@@ -93,39 +91,66 @@ async fn list_files(
     file_type: handler::FileType,
 ) -> Result<Vec<FileRes>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let home_path = app_handle.path().home_dir().unwrap();
-    let walker = WalkDir::new(home_path);
-    let entries = walker
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| filter_files(&file_type, e));
-    let mut files: Vec<FileRes> = Vec::new();
+        let dirs = [
+            app_handle.path().download_dir().unwrap(),
+            app_handle.path().video_dir().unwrap(),
+            app_handle.path().picture_dir().unwrap(),
+            app_handle.path().audio_dir().unwrap(),
+        ];
+        let mut files: Vec<FileRes> = Vec::new();
+        for dir in dirs {
+            let walker = WalkDir::new(dir);
+            let entries = walker
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| filter_files(&file_type, e));
 
-    for e in entries {
-        let name = match e.file_name().to_str() {
-            Some(s) => s.to_string(),
-            None => continue,
-        };
-        let size = match e.metadata() {
-            Ok(meta) => meta.len(),
-            Err(_) => continue,
-        };
-        files.push(FileRes {
-            file_name: name,
-            file_path: e.into_path(),
-            file_size: size,
-        });
-    }
+            for e in entries {
+                let name = match e.file_name().to_str() {
+                    Some(s) => s.to_string(),
+                    None => continue,
+                };
+                let size = match e.metadata() {
+                    Ok(meta) => meta.len(),
+                    Err(_) => continue,
+                };
+                files.push(FileRes {
+                    file_name: name,
+                    file_path: e.into_path(),
+                    file_size: size,
+                });
+            }
+        }
 
-    Ok(files)
-    }).await.unwrap()
+        Ok(files)
+    })
+    .await
+    .unwrap()
+}
+
+#[tauri::command]
+async fn get_file(file_path: PathBuf) -> Result<Vec<u8>, String> {
+    let mut buff: Vec<u8> = Vec::new();
+    let mut file = match File::open(file_path).await {
+        Ok(f) => f,
+        Err(_) => return Err(String::from("File not found")),
+    };
+    match file.read_to_end(&mut buff).await {
+        Ok(_) => (),
+        Err(_) => return Err(String::from("Unable to read file")),
+    };
+    Ok(buff)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![create_conn_server, list_files])
+        .invoke_handler(tauri::generate_handler![
+            create_conn_server,
+            list_files,
+            get_file
+        ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(SessionId(Uuid::new_v4())))
         .run(tauri::generate_context!())

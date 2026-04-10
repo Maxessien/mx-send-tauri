@@ -1,6 +1,6 @@
 import AppHeader from "./components/page-layouts/AppHeader";
-import "./index.css";
 import AppNavigation from "./components/page-layouts/AppNavigation";
+import "./index.css";
 
 function App() {
   return (
