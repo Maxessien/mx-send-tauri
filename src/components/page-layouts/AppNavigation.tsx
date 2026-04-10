@@ -25,7 +25,7 @@ const NavItem = ({ icon, title, active }: { icon: JSX.Element; title: string, ac
 
 const AppNavigation = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="relative py-4 h-[calc(100vh-64px)] w-full">
+    <div className="relative h-[calc(100vh-64px)] w-full">
       <nav className="w-full absolute bottom-3 left-0 md:relative px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none">
         <ul className="space-y-3 flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2 h-full w-full">
           <NavItem icon={<FaMusic />} active="audio" title="Audio" />
@@ -34,7 +34,7 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
           <NavItem icon={<FaFile />} active="document" title="Document" />
         </ul>
       </nav>
-      <main>{children}</main>
+      <main className="pt-4 pb-13 md:pb-4">{children}</main>
     </div>
   );
 };

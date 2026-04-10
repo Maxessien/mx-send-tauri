@@ -27,6 +27,8 @@ pub struct AllowedFileList {
 }
 
 
+const PORTS: [&str, 5] = ["5055", "5000", "2130", "1254", "3030"]
+
 
 pub fn create_server(app_handle: AppHandle) {
     tauri::async_runtime::spawn(async move {

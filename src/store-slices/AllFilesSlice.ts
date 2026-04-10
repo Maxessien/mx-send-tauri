@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 export type FileResType = "audio" | "video" | "document" | "images"
 
-interface FileRes {
+export interface FileRes {
     file_name: string,
     file_size: number,
     file_path: string,
