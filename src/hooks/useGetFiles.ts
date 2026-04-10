@@ -33,7 +33,7 @@ const useGetFiles = () => {
     if (!rustEnum?.trim()) return;
     try {
       const files = await invoke<FileRes[]>("list_files", {
-        file_type: rustEnum,
+        fileType: rustEnum,
       });
       dispatch(addManyFiles({ type, info: files }));
       return files

@@ -52,7 +52,7 @@ function App() {
         {isFetching ? (
           <div className="w-full flex justify-center items-center h-full">
             <div>
-              <LoadRoller strokeWidth={15} />
+              <LoadRoller strokeWidth={10} />
             </div>
           </div>
         ) : (
