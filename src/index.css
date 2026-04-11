@@ -18,4 +18,8 @@
 body{
   color: var(--text-primary);
   background: var(--main-secondary-light);
+  width: 100vw;
+  height: 100vh;
+  min-height: 540px;
+  overflow-x: hidden;
 }

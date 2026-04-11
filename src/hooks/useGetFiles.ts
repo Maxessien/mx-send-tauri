@@ -1,12 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../store";
 import {
   addManyFiles,
   FileRes,
   FileResType,
 } from "../store-slices/allFilesSlice";
-import { useDispatch, useSelector } from "react-redux";
-import { useQuery } from "@tanstack/react-query";
-import { RootState } from "../store";
 
 const useGetFiles = () => {
   const dispatch = useDispatch();
@@ -49,9 +49,11 @@ const useGetFiles = () => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
+    staleTime: 1000 * 60 * 60 * 6
   });
 
   return { getFiles, query };
 };
 
 export { useGetFiles };
+

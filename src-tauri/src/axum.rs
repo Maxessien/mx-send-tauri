@@ -3,10 +3,11 @@ use std::path::PathBuf;
 use axum::{
     http::Method,
     middleware,
-    routing::{get, post, any},
+    routing::{any, get, post},
     Router,
 };
 use tauri::AppHandle;
+use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
@@ -26,9 +27,20 @@ pub struct AllowedFileList {
     pub list: Vec<FileInfo>,
 }
 
-
 const PORTS: [&str; 5] = ["5055", "5000", "2130", "1254", "3030"];
 
+async fn get_available_listener() -> TcpListener {
+    for port in PORTS {
+        if let Ok(tcp) = tokio::net::TcpListener::bind("0.0.0.0:".to_owned() + port).await {
+            return tcp;
+        }
+    }
+
+    //Use default with unwrap if tcp was never returned from ports
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+
+    listener
+}
 
 pub fn create_server(app_handle: AppHandle) {
     tauri::async_runtime::spawn(async move {
@@ -46,7 +58,7 @@ pub fn create_server(app_handle: AppHandle) {
                 ))
                 .with_state(app_handle);
 
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+        let listener = get_available_listener().await;
 
         axum::serve(listener, app).await.unwrap();
     });
