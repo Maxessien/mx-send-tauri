@@ -21,6 +21,7 @@ pub struct SessionId(Uuid);
 struct CreateConnRes {
     session_id: Uuid,
     ip_address: String,
+    port: String,
 }
 
 #[tauri::command]
@@ -28,7 +29,7 @@ async fn create_conn_server<'a>(
     app_handle: tauri::AppHandle,
     state: tauri::State<'a, Mutex<SessionId>>,
 ) -> Result<CreateConnRes, String> {
-    axum::create_server(app_handle);
+    let port = axum::create_server(app_handle).await;
     let mut id_state = state.lock().await;
     id_state.0 = Uuid::new_v4();
     let ip = match local_ip() {
@@ -37,10 +38,20 @@ async fn create_conn_server<'a>(
     };
     let res = CreateConnRes {
         session_id: id_state.0,
-        ip_address: ip,
+        ip_address: ip
+        ,port
     };
     Ok(res)
 }
+
+#[tauri::command]
+async fn disconnect_server()->Result<String, String>{
+    if let Some(token) = axum::CANCEL_TOKEN.get() {
+        token.cancel();
+    }
+    Ok(String::from("Shutdown successful"))
+}
+
 
 #[derive(Serialize)]
 struct FileRes {
@@ -148,6 +159,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             create_conn_server,
+            disconnect_server,
             list_files,
             get_file
         ])

@@ -20,7 +20,7 @@ const initialState: AllFiles = {
     audio: [],
     document: [],
     images: [],
-    video: []
+    video: [],
 }
 
 const allFiles = createSlice({
@@ -31,6 +31,7 @@ const allFiles = createSlice({
             state[payload.type].push(payload.info)
         },
         addManyFiles: (state, {payload}: {payload: {type: FileResType, info: FileRes[]}})=>{
+            console.log(payload)
             state[payload.type] = [...state[payload.type], ...payload.info]
         },
         replaceAllFiles: (state, {payload}: {payload: {type: FileResType, info: FileRes[]}})=>{

@@ -1,12 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
 import activeTabReducer from "./store-slices/activeTabs";
 import allFilesReducer from "./store-slices/allFilesSlice";
+import connectionReducer from "./store-slices/connectionSlice";
 
 
 const store = configureStore({
     reducer: {
         allFiles: allFilesReducer,
-        activeTab: activeTabReducer
+        activeTab: activeTabReducer,
+        connection: connectionReducer,
     }
 })
 

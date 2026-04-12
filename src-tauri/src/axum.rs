@@ -6,8 +6,10 @@ use axum::{
     routing::{any, get, post},
     Router,
 };
+use std::sync::OnceLock;
 use tauri::AppHandle;
 use tokio::net::TcpListener;
+use tokio_util::sync::CancellationToken;
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
@@ -29,21 +31,27 @@ pub struct AllowedFileList {
 
 const PORTS: [&str; 5] = ["5055", "5000", "2130", "1254", "3030"];
 
-async fn get_available_listener() -> TcpListener {
+async fn get_available_listener() -> (TcpListener, String) {
     for port in PORTS {
+        println!("Testing port {}", port);
         if let Ok(tcp) = tokio::net::TcpListener::bind("0.0.0.0:".to_owned() + port).await {
-            return tcp;
+            return (tcp, String::from(port));
         }
     }
 
     //Use default with unwrap if tcp was never returned from ports
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
-    listener
+    (listener, String::from("3000"))
 }
 
-pub fn create_server(app_handle: AppHandle) {
+pub static CANCEL_TOKEN: OnceLock<CancellationToken> = OnceLock::new();
+
+pub async fn create_server(app_handle: AppHandle) -> String {
+    let (listener, port) = get_available_listener().await;
     tauri::async_runtime::spawn(async move {
+        let token = CancellationToken::new();
+        let _ = CANCEL_TOKEN.set(token.clone());
         let cors = CorsLayer::new()
             .allow_methods([Method::POST, Method::GET])
             .allow_origin(Any);
@@ -57,9 +65,13 @@ pub fn create_server(app_handle: AppHandle) {
                     middleware::from_fn_with_state(app_handle.clone(), handler::verify_session_id),
                 ))
                 .with_state(app_handle);
-
-        let listener = get_available_listener().await;
-
-        axum::serve(listener, app).await.unwrap();
+            axum::serve(listener, app)
+            .with_graceful_shutdown(async move {
+                token.cancelled().await;
+                println!("Axum server stopped, but the app is still running!");
+            })
+            .await
+            .unwrap();
     });
+    port
 }

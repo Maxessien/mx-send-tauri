@@ -2,8 +2,8 @@ use std::path::{Path, PathBuf};
 
 use axum::{
     body::{Body, Bytes},
-    extract::{Json, Query, Request, State},
-    http::{header, Response, StatusCode},
+    extract::{Json, Query, State},
+    http::{Response, StatusCode, header},
     middleware::Next,
     response::IntoResponse,
 };
@@ -19,6 +19,8 @@ use uuid::Uuid;
 
 use crate::axum::AllowedFileList;
 use crate::SessionId;
+
+type HttpRequest = axum::http::Request<Body>;
 
 #[derive(Deserialize)]
 pub struct UploadPath {
@@ -53,7 +55,7 @@ pub struct UploadFileQuery {
 
 pub async fn verify_session_id(
     State(app): State<AppHandle>,
-    req: Request<Body>,
+    req: HttpRequest,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
     let header = match req.headers().get(header::AUTHORIZATION) {

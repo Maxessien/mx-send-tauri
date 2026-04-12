@@ -6,11 +6,11 @@ import {
 
 const interfaces = {
   primary:
-    "bg-(var(--main-primary)) text-(var(--text-secondary-light)) hover:bg-(var(--main-primary-light))",
+    "bg-(--main-primary) text-(--text-primary-light) hover:bg-(--main-primary-light)",
   secondary:
-    "text-(var(--main-primary)) shadow-[0px_0.4px_10px_-7px_black] bg-(var(--main-primary-light)) hover:bg-red-200",
+    "text-(--main-primary) shadow-[0px_0.4px_10px_-7px_black] bg-(--main-primary-light) hover:bg-red-200",
   tertiary:
-    "bg-transparent text-(var(--main-primary)) border-[2px] border-(var(--main-primary))",
+    "bg-transparent text-(--main-primary) border-[2px] border-(--main-primary)",
 };
 
 const sizes = {
