@@ -12,7 +12,7 @@ import useWebsocket from "./useWebsocket";
 
 const useGetFiles = () => {
   const dispatch = useDispatch();
-  const { activeTab } = useSelector((state: RootState) => state.activeTab);
+  const { activeTab, transferring } = useSelector((state: RootState) => ({...state.activeTab, ...state.allFiles}));
 
   const getFiles = async (type: FileResType) => {
     const rustEnum = getRustFileType(type);
@@ -33,7 +33,10 @@ const useGetFiles = () => {
 
   const query = useQuery({
     queryKey: [activeTab],
-    queryFn: ({ queryKey }) => getFiles(queryKey?.[0]),
+    queryFn: ({ queryKey }) => {
+      if (queryKey?.[0] === "transferring") return transferring
+      else return getFiles(queryKey?.[0])
+    },
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,

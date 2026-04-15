@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { FaFile, FaImage, FaMusic, FaVideo } from "react-icons/fa";
+import { FiLoader } from "react-icons/fi"
 import { HiX } from "react-icons/hi";
 import QrCode from "react-qr-code";
 import { useDispatch, useSelector } from "react-redux";
@@ -246,6 +247,7 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
             <NavItem icon={<FaVideo />} active="video" title="Video" />
             <NavItem icon={<FaImage />} active="images" title="Image" />
             <NavItem icon={<FaFile />} active="document" title="Document" />
+            <NavItem icon={<FiLoader />} active="transferring" title="Transfers" />
           </ul>
         </nav>
         <main className="px-4 h-full w-full overflow-y-auto overflow-x-hidden pb-13 md:pb-4">

@@ -1,15 +1,17 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactElement, ReactNode } from "react";
 
 import { FileResType, Transfer } from "./files";
+import { ActiveTab } from "./activeTab";
 
 export interface NavItemProps {
   icon: ReactElement;
   title: string;
-  active: FileResType;
+  active: ActiveTab;
 }
 
 export interface SocketMessage {
-  type: "NewFile" | "Progress" | "NewConnection";  payload: string | Transfer;
+  type: "NewFile" | "Progress" | "NewConnection";
+  payload: string | Transfer;
 }
 
 export interface TabListItemProps {

@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { ActiveTabState, FileResType } from "../types";
+import { ActiveTab, ActiveTabState } from "../types";
 
 
 const initialState: ActiveTabState = { activeTab: "audio" };
@@ -8,7 +8,7 @@ const activeTab = createSlice({
     name: "activeTab",
     initialState,
     reducers: {
-        changeTab: (state, { payload }: { payload: FileResType }) => {
+        changeTab: (state, { payload }: { payload: ActiveTab }) => {
             state.activeTab = payload;
         },
     },

@@ -44,14 +44,14 @@ const TabLayout = () => {
           </div>
         </header>
         {files?.[activeTab].length > 0 ? (
-          files?.[activeTab].map(({ file_name, file_path, file_size }) => {
+          files?.[activeTab].map(({ file_name, file_path, file_size, type }) => {
             return (
               <TabListItem
                 fileName={file_name}
                 filePath={file_path}
                 fileSize={file_size}
-                type={activeTab}
-                previewImgUrl={FILE_PREVIEW_IMAGES[activeTab]}
+                type={type}
+                previewImgUrl={FILE_PREVIEW_IMAGES[type]}
               />
             );
           })
