@@ -1,4 +1,4 @@
-export type FileResType = "audio" | "video" | "document" | "images";
+export type FileResType = "audio" | "video" | "document" | "image";
 
 export interface FileRes {
   file_name: string;

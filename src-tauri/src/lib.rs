@@ -39,7 +39,10 @@ async fn create_conn_server<'a>(
     id_state.0 = Uuid::new_v4();
     let ip = match local_ip() {
         Ok(addr) => addr.to_string(),
-        Err(_) => return Err(String::from("No Ip address found")),
+        Err(err) => {
+            dbg!(err);
+            return Err(String::from("No Ip address found"))
+        },
     };
     let res = CreateConnRes {
         session_id: id_state.0,
@@ -133,10 +136,6 @@ async fn save_file(
         Ok(dir) => dir,
         Err(_) => return Err(String::from("Failed to get app folder")),
     };
-    let mut file = match File::create_new(&download_dir).await {
-        Ok(f) => f,
-        Err(_) => return Err(String::from("Failed to create file")),
-    };
     if let Some(parent) = download_dir.parent() {
         if let Err(_) = tokio::fs::create_dir_all(parent).await {
             return Err(String::from("Failed to create parent dir"));
@@ -149,6 +148,11 @@ async fn save_file(
 
     let sub_folder = file_types::folder_name(&file_type);
     download_dir.push(format!("mxsend/{}/{}", sub_folder, safe_file_name));
+    
+    let mut file = match File::create_new(&download_dir).await {
+        Ok(f) => f,
+        Err(_) => return Err(String::from("Failed to create file")),
+    };
 
     match file.write_all(&bytes).await {
         Ok(_) => Ok(String::from("Saved")),

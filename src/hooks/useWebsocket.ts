@@ -12,7 +12,11 @@ const useWebsocket = (shouldConnect: boolean = false)=>{
             socket.current.close()
             socket.current = null
         }
-        if (connect) socket.current = new WebSocket(`ws://${connectionInfo.ip_address}:${connectionInfo.port}/ws`)
+        if (connect) {
+            socket.current = new WebSocket(`http://${connectionInfo.ip_address}:${connectionInfo.port}/ws?session=${connectionInfo.session_id}`)
+            socket.current.onopen = ()=>console.log("Websocket running")
+            socket.current.onerror = ()=>console.log("Websocket error")
+        }
     }, [connect])
 
 

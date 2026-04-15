@@ -12,7 +12,10 @@ import useWebsocket from "./useWebsocket";
 
 const useGetFiles = () => {
   const dispatch = useDispatch();
-  const { activeTab, transferring } = useSelector((state: RootState) => ({...state.activeTab, ...state.allFiles}));
+  const { activeTab, transferring } = useSelector((state: RootState) => ({
+    ...state.activeTab,
+    ...state.allFiles,
+  }));
 
   const getFiles = async (type: FileResType) => {
     const rustEnum = getRustFileType(type);
@@ -34,8 +37,8 @@ const useGetFiles = () => {
   const query = useQuery({
     queryKey: [activeTab],
     queryFn: ({ queryKey }) => {
-      if (queryKey?.[0] === "transferring") return transferring
-      else return getFiles(queryKey?.[0])
+      if (queryKey?.[0] === "transferring") return transferring;
+      else return getFiles(queryKey?.[0]);
     },
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -46,39 +49,32 @@ const useGetFiles = () => {
   return { getFiles, query };
 };
 
-export const useReceiver = () => {
+const useReceiver = () => {
   const { role, isConnected, connectionInfo, transferring } = useSelector(
     (state: RootState) => ({ ...state.connection, ...state.allFiles }),
   );
   const dispatch = useDispatch();
   const { setConnect, socket } = useWebsocket(false);
 
-  const downloadVideo = (fileId: string, fileInfo: FileRes) => {
+  const downloadVideo = (fileId: string) => {
     if (!isConnected || role !== "receiver") return;
     try {
       setConnect(true);
       const xml = new XMLHttpRequest();
       xml.open(
         "GET",
-        `http://${connectionInfo.ip_address}:${connectionInfo.port}?file_id=${fileId}`,
+        `http://${connectionInfo.ip_address}:${connectionInfo.port}/download?id=${fileId}`,
       );
       xml.setRequestHeader(
-        "Authorisation",
+        "Authorization",
         `Bearer ${connectionInfo.session_id}`,
       );
-      xml.onloadstart = () => {
-        const updated = [
-          ...transferring,
-          {
-            current: 0,
-            file_name: fileInfo.file_name,
-            file_path: fileInfo.file_path,
-            file_size: fileInfo.file_size,
-            total: fileInfo.file_size,
-            type: fileInfo.type,
-          },
-        ];
-        dispatch(modifyTransferring(updated));
+      const res = xml.getResponseHeader;
+      const fileInfo = {
+        file_name: res("file_name") || "",
+        file_path: res("file_path") || "",
+        file_size: Number(res("file_size")) || 0,
+        type: (res("file_type") as FileResType) || "",
       };
       xml.onprogress = (e) => {
         if (e.lengthComputable) {
@@ -115,4 +111,4 @@ export const useReceiver = () => {
   return { downloadVideo };
 };
 
-export { useGetFiles };
+export { useGetFiles, useReceiver };

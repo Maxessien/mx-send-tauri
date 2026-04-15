@@ -6,7 +6,7 @@ import { TabListItemProps } from "../../types"
 
 
 const TabListItem = ({ fileName, filePath, fileSize, previewImgUrl, type }: TabListItemProps) => {
-  const {selected} = useSelector((state: RootState)=>state.allFiles)
+  const {selected} = useSelector((state: RootState)=>({...state.allFiles}))
   const dispatch = useDispatch()
 
   const handleSelection = ()=>{
@@ -17,7 +17,7 @@ const TabListItem = ({ fileName, filePath, fileSize, previewImgUrl, type }: TabL
 
   return (
     <>
-    <div onClick={handleSelection} className="flex w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
+    <div onClick={handleSelection} className="flex relative w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
         <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
             <img className="object-cover object-center w-full h-full" src={previewImgUrl} alt="Image" />
         </div>

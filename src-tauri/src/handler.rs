@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use axum::{
     body::{Body, Bytes},
     extract::{Json, Query, State},
-    http::{Response, StatusCode, header},
+    http::{header, Response, StatusCode},
     middleware::Next,
     response::IntoResponse,
 };
@@ -26,6 +26,7 @@ type HttpRequest = axum::http::Request<Body>;
 #[derive(Deserialize)]
 pub struct UploadPath {
     pub path: PathBuf,
+    pub file_type: FileType,
 }
 
 #[derive(Deserialize)]
@@ -38,13 +39,13 @@ pub struct DownloadErrResponse {
     pub message: String,
 }
 
+#[derive(Clone)]
 #[derive(Deserialize)]
 pub enum FileType {
     Audio,
     Video,
     Document,
     Image,
-    Other,
 }
 
 #[derive(Deserialize)]
@@ -54,21 +55,32 @@ pub struct UploadFileQuery {
     pub file_type: FileType,
 }
 
+#[derive(Deserialize)]
+pub struct WsSessionQuery {
+    pub session: String,
+}
+
 pub async fn verify_session_id(
     State(app): State<AppHandle>,
     req: HttpRequest,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let header = match req.headers().get(header::AUTHORIZATION) {
-        Some(h) => h.to_str(),
-        None => return Err(StatusCode::UNAUTHORIZED),
-    };
-    let id = match header {
-        Ok(id_str) => match id_str.strip_prefix("Bearer ") {
-            Some(stripped_id) => stripped_id,
+    let id = if req.uri().path() == "/ws" {
+        let Query(ws_query) = Query::<WsSessionQuery>::try_from_uri(req.uri())
+            .map_err(|_| StatusCode::UNAUTHORIZED)?;
+        ws_query.session
+    } else {
+        let header = match req.headers().get(header::AUTHORIZATION) {
+            Some(h) => h.to_str(),
             None => return Err(StatusCode::UNAUTHORIZED),
-        },
-        Err(_) => return Err(StatusCode::UNAUTHORIZED),
+        };
+        match header {
+            Ok(id_str) => match id_str.strip_prefix("Bearer ") {
+                Some(stripped_id) => String::from(stripped_id),
+                None => return Err(StatusCode::UNAUTHORIZED),
+            },
+            Err(_) => return Err(StatusCode::UNAUTHORIZED),
+        }
     };
     let state = app.state::<Mutex<SessionId>>();
     let state_guard = state.lock().await;
@@ -76,7 +88,7 @@ pub async fn verify_session_id(
 
     let sess_id = sess_guard.to_string();
 
-    let is_authorised = sess_id == String::from(id);
+    let is_authorised = sess_id == id;
 
     if !is_authorised {
         return Err(StatusCode::UNAUTHORIZED);
@@ -155,6 +167,7 @@ pub async fn add_to_filelist(
         size: size,
         id: file_id,
         path: file_pt.path,
+        file_type: file_pt.file_type
     });
 
     (StatusCode::CREATED, file_id.to_string())
@@ -194,6 +207,14 @@ pub async fn download_from_filelist(
                             header::CONTENT_DISPOSITION,
                             format!("attachment; filename=\"{}\"", safe_name),
                         )
+                        .header("file_size", info.size)
+                        .header("file_name", info.name)
+                        .header("file_type", match info.file_type {
+                            FileType::Audio => "audio",
+                            FileType::Image => "image",
+                            FileType::Document => "document",
+                            FileType::Video => "video",
+                        })
                         .body(body)
                 }
                 Err(_) => {

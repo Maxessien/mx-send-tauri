@@ -29,7 +29,6 @@ pub fn folder_name(file_type: &FileType) -> &'static str {
         FileType::Document => "document",
         FileType::Image => "image",
         FileType::Video => "video",
-        FileType::Other => "other",
     }
 }
 
@@ -39,7 +38,6 @@ pub fn extensions_for(file_type: &FileType) -> Option<&'static [&'static str]> {
         FileType::Image => Some(IMAGE_EXTS),
         FileType::Video => Some(VIDEO_EXTS),
         FileType::Document => Some(DOCUMENT_EXTS),
-        FileType::Other => None,
     }
 }
 

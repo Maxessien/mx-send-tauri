@@ -4,7 +4,7 @@ export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
   audio: "/audio-icon.jpg",
   video: "/icons8-video-100.png",
   document: "/document-icon.png",
-  images: "/icons8-image-100.png",
+  image: "/icons8-image-100.png",
 };
 
 export const determineFilesEqual = (file1: FileRes, file2: FileRes) => {
@@ -25,7 +25,7 @@ export const getRustFileType = (type: FileResType) => {
       return "Audio";
     case "document":
       return "Document";
-    case "images":
+    case "image":
       return "Image";
     case "video":
       return "Video";
@@ -33,3 +33,10 @@ export const getRustFileType = (type: FileResType) => {
       return null;
   }
 };
+
+export const capitalise = (word: string)=>{
+  const first = word.slice(0, 1)
+  const rest = word.slice(1)
+
+  return first.toUpperCase() + rest
+}

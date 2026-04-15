@@ -23,6 +23,7 @@ pub struct FileInfo {
     pub size: u64,
     pub id: Uuid,
     pub path: PathBuf,
+    pub file_type: handler::FileType
 }
 
 pub struct AllowedFileList {
@@ -53,7 +54,7 @@ pub async fn create_server(app_handle: AppHandle) -> String {
         let token = CancellationToken::new();
         let _ = CANCEL_TOKEN.set(token.clone());
         let cors = CorsLayer::new()
-            .allow_methods([Method::POST, Method::GET])
+            .allow_methods([Method::POST, Method::GET, Method::DELETE, Method::PATCH])
             .allow_origin(Any);
         let app =
             Router::new()
