@@ -2,7 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
-import { addManyFiles, modifyTransferring } from "../store-slices/allFilesSlice";
+import {
+  addManyFiles,
+  modifyTransferring,
+} from "../store-slices/allFilesSlice";
 import { FileRes, FileResType } from "../types";
 import { determineFilesEqual, getRustFileType } from "../utils/file-utils";
 import useWebsocket from "./useWebsocket";
@@ -13,7 +16,7 @@ const useGetFiles = () => {
 
   const getFiles = async (type: FileResType) => {
     const rustEnum = getRustFileType(type);
-    if (!rustEnum) return;
+    if (!rustEnum) throw new Error(`Unknown file type: ${type}`);
     try {
       const files = await invoke<FileRes[]>("list_files", {
         fileType: rustEnum,
@@ -40,7 +43,7 @@ const useGetFiles = () => {
   return { getFiles, query };
 };
 
-export const useReciver = () => {
+export const useReceiver = () => {
   const { role, isConnected, connectionInfo, transferring } = useSelector(
     (state: RootState) => ({ ...state.connection, ...state.allFiles }),
   );
@@ -48,7 +51,7 @@ export const useReciver = () => {
   const { setConnect, socket } = useWebsocket(false);
 
   const downloadVideo = (fileId: string, fileInfo: FileRes) => {
-    if (!isConnected || role !== "reciever") return;
+    if (!isConnected || role !== "receiver") return;
     try {
       setConnect(true);
       const xml = new XMLHttpRequest();
@@ -61,16 +64,18 @@ export const useReciver = () => {
         `Bearer ${connectionInfo.session_id}`,
       );
       xml.onloadstart = () => {
-        const temp = transferring;
-        temp.push({
-          current: 0,
-          file_name: fileInfo.file_name,
-          file_path: fileInfo.file_path,
-          file_size: fileInfo.file_size,
-          total: fileInfo.file_size,
-          type: fileInfo.type,
-        });
-        dispatch(modifyTransferring(temp));
+        const updated = [
+          ...transferring,
+          {
+            current: 0,
+            file_name: fileInfo.file_name,
+            file_path: fileInfo.file_path,
+            file_size: fileInfo.file_size,
+            total: fileInfo.file_size,
+            type: fileInfo.type,
+          },
+        ];
+        dispatch(modifyTransferring(updated));
       };
       xml.onprogress = (e) => {
         if (e.lengthComputable) {
@@ -83,11 +88,22 @@ export const useReciver = () => {
             );
         }
       };
-      xml.onload = () => {
-        const temp = transferring;
-        temp.filter((file) => determineFilesEqual(file, fileInfo));
-        dispatch(modifyTransferring(temp));
+      xml.onload = async () => {
+        const updated = transferring.filter(
+          (file) => !determineFilesEqual(file, fileInfo),
+        );
+        dispatch(modifyTransferring(updated));
+        const bytes = xml.status === 200 ? xml.response : null;
+        await invoke("save_file", {
+          fileName: fileInfo.file_name,
+          fileType: fileInfo.type,
+          bytes,
+        });
       };
+      xml.onerror = () => {
+        console.error("Download failed for file:", fileInfo.file_name);
+      };
+      xml.send();
     } catch (err) {
       console.log(err);
     }
@@ -97,4 +113,3 @@ export const useReciver = () => {
 };
 
 export { useGetFiles };
-

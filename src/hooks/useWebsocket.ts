@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 
@@ -6,11 +6,13 @@ import { RootState } from "../store";
 const useWebsocket = (shouldConnect: boolean = false)=>{
     const [connect, setConnect] = useState(shouldConnect)
     const {connectionInfo} = useSelector((state: RootState)=>state.connection)
-    const socket = useRef<WebSocket>(connect ? new WebSocket(`ws://${connectionInfo.ip_address}:${connectionInfo.port}/ws`) : null);
-
+    const socket = useRef<WebSocket | null>(null);
     useEffect(()=>{
+        if (socket.current){
+            socket.current.close()
+            socket.current = null
+        }
         if (connect) socket.current = new WebSocket(`ws://${connectionInfo.ip_address}:${connectionInfo.port}/ws`)
-        else socket.current = null
     }, [connect])
 
 

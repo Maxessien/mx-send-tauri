@@ -9,8 +9,7 @@ export interface NavItemProps {
 }
 
 export interface SocketMessage {
-  type: "Newfile" | "Progress" | "NewConnection";
-  payload: string | Transfer;
+  type: "NewFile" | "Progress" | "NewConnection";  payload: string | Transfer;
 }
 
 export interface TabListItemProps {

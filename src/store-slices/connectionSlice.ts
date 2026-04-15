@@ -3,7 +3,7 @@ import { ConnectionState } from "../types";
 
 const initialState: ConnectionState = {
   isConnected: false,
-  role: "reciever",
+  role: "receiver",
   count: 0,
   connectionInfo: { ip_address: "", port: "", session_id: "" },
 };

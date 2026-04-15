@@ -8,9 +8,8 @@ export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
 };
 
 export const determineFilesEqual = (file1: FileRes, file2: FileRes) => {
-  return file1.file_name !== file2.file_name && file1.file_path !== file2.file_path;
+  return file1.file_name === file2.file_name && file1.file_path === file2.file_path;
 };
-
 export const formatFileSize = (size: number) => {
   if (size < Math.pow(1024, 2)) return `${(size / 1024).toFixed(0)} KB`;
   if (size >= Math.pow(1024, 2) && size < Math.pow(1024, 3)) {

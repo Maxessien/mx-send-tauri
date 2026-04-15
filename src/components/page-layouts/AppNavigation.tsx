@@ -83,7 +83,7 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
             connectionInfo: info,
             count: 1,
             isConnected: socket.current ? true : false,
-            role: "reciever",
+            role: "receiver",
           }),
         );
       } catch (err) {
@@ -106,8 +106,8 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
       setConnect(true);
       setShowQrCode({ active: true, codeVal: JSON.stringify(info) });
       if (socket.current)
-        socket.current.onmessage = (e: MessageEvent<SocketMessage>) => {
-          const data = e.data;
+        socket.current.onmessage = (e: MessageEvent<string>) => {
+          const data = JSON.parse(e.data) as SocketMessage;
           switch (data.type) {
             case "NewConnection":
               dispatch(
@@ -120,20 +120,26 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
               );
               break;
             case "Progress":
-              const temp = transferring;
-              const newTransfer = e.data.payload as Transfer;
-              const alreadyExists = temp.find((file) =>
+              const newTransfer = data.payload as Transfer;
+              const alreadyExists = transferring.find((file) =>
                 determineFilesEqual(file, newTransfer),
               );
-              if (newTransfer.current >= newTransfer.total)
-                temp.filter((file) => determineFilesEqual(file, newTransfer));
-              if (alreadyExists)
-                temp.map((file) =>
-                  determineFilesEqual(file, newTransfer)
-                    ? { ...file, current: newTransfer.current }
-                    : file,
+              if (newTransfer.current >= newTransfer.total) {
+                const updated = transferring.filter(
+                  (file) => !determineFilesEqual(file, newTransfer),
                 );
-              dispatch(modifyTransferring(temp));
+                dispatch(modifyTransferring(updated));
+                break;
+              }
+
+              if (!alreadyExists) break;
+
+              const updated = transferring.map((file) =>
+                determineFilesEqual(file, newTransfer)
+                  ? { ...file, current: newTransfer.current }
+                  : file,
+              );
+              dispatch(modifyTransferring(updated));
               break;
             default:
               break;

@@ -7,13 +7,17 @@ use futures_util::lock::Mutex;
 use local_ip_address::local_ip;
 use serde::Serialize;
 use tauri::Manager;
-use tokio::{fs::File, io::{AsyncReadExt, AsyncWriteExt}};
+use tokio::{
+    fs::File,
+    io::{AsyncReadExt, AsyncWriteExt},
+};
 use uuid::Uuid;
 use walkdir::WalkDir;
+use std::path::Path;
 
 pub(crate) mod axum;
-pub(crate) mod handler;
 pub(crate) mod file_types;
+pub(crate) mod handler;
 pub(crate) mod websocket;
 
 pub struct SessionId(Uuid);
@@ -39,20 +43,19 @@ async fn create_conn_server<'a>(
     };
     let res = CreateConnRes {
         session_id: id_state.0,
-        ip_address: ip
-        ,port
+        ip_address: ip,
+        port,
     };
     Ok(res)
 }
 
 #[tauri::command]
-async fn disconnect_server()->Result<String, String>{
+async fn disconnect_server() -> Result<String, String> {
     if let Some(token) = axum::CANCEL_TOKEN.get() {
         token.cancel();
     }
     Ok(String::from("Shutdown successful"))
 }
-
 
 #[derive(Serialize)]
 struct FileRes {
@@ -118,19 +121,34 @@ async fn get_file(file_path: PathBuf) -> Result<Vec<u8>, String> {
     Ok(buff)
 }
 
+
 #[tauri::command]
-async fn save_file(app_handle: tauri::AppHandle, bytes: Vec<u8>, file_name: String, file_type: handler::FileType)->Result<String, String>{
-    
+async fn save_file(
+    app_handle: tauri::AppHandle,
+    bytes: Vec<u8>,
+    file_name: String,
+    file_type: handler::FileType,
+) -> Result<String, String> {
     let mut download_dir = match app_handle.path().download_dir() {
         Ok(dir) => dir,
         Err(_) => return Err(String::from("Failed to get app folder")),
     };
-    let sub_folder = file_types::folder_name(&file_type);
-    download_dir.push(format!("mxsend/{}/{}", sub_folder, file_name));
     let mut file = match File::create_new(&download_dir).await {
         Ok(f) => f,
         Err(_) => return Err(String::from("Failed to create file")),
     };
+    if let Some(parent) = download_dir.parent() {
+        if let Err(_) = tokio::fs::create_dir_all(parent).await {
+            return Err(String::from("Failed to create parent dir"));
+        }
+    }
+    let safe_file_name = Path::new(&file_name)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| String::from("Invalid file name"))?;
+
+    let sub_folder = file_types::folder_name(&file_type);
+    download_dir.push(format!("mxsend/{}/{}", sub_folder, safe_file_name));
 
     match file.write_all(&bytes).await {
         Ok(_) => Ok(String::from("Saved")),
@@ -146,7 +164,8 @@ pub fn run() {
             create_conn_server,
             disconnect_server,
             list_files,
-            get_file, save_file
+            get_file,
+            save_file
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(SessionId(Uuid::new_v4())))

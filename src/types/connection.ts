@@ -6,7 +6,7 @@ export interface ConnectionInfo {
 
 export interface ConnectionState {
   isConnected: boolean;
-  role: "sender" | "reciever";
+  role: "sender" | "receiver";
   count: number;
   connectionInfo: ConnectionInfo;
 }
