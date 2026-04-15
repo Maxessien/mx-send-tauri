@@ -1,21 +1,21 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import { JSX, ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { FaFile, FaImage, FaMusic, FaVideo } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 import QrCode from "react-qr-code";
 import { useDispatch, useSelector } from "react-redux";
+import useSendFiles from "../../hooks/useSendFiles";
+import useWebsocket from "../../hooks/useWebsocket";
 import { RootState } from "../../store";
 import { changeTab } from "../../store-slices/activeTabs";
-import { FileResType } from "../../store-slices/allFilesSlice";
+import {
+  modifyTransferring,
+} from "../../store-slices/allFilesSlice";
 import { setConnection } from "../../store-slices/connectionSlice";
+import { ConnectionInfo, NavItemProps, SocketMessage, Transfer } from "../../types";
+import { determineFilesEqual } from "../../utils/file-utils";
 import Button from "../reusable-components/Button";
-
-type ConnectionQrInfo = {
-  session_id: string;
-  ip_address: string;
-  port: string;
-};
 
 const scannerConfig = {
   fps: 10,
@@ -27,11 +27,7 @@ const NavItem = ({
   icon,
   title,
   active,
-}: {
-  icon: JSX.Element;
-  title: string;
-  active: FileResType;
-}) => {
+}: NavItemProps) => {
   const { activeTab } = useSelector((state: RootState) => state.activeTab);
   const listStyles = (isActive: boolean) =>
     `md:w-full transition-all duration-200 h-max cursor-pointer p-3 w-max rounded-full md:rounded-md ${isActive ? "text-(--main-primary) bg-(--main-primary-lighter) hover:bg-(--main-primary-light) border-2 border-(--main-primary)" : "hover:bg-(--main-tertiary-light)"} text-lg font-medium`;
@@ -56,20 +52,17 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
     codeVal: "",
   });
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const receiverSocketRef = useRef<WebSocket | null>(null);
-  const { count, isConnected } = useSelector(
-    (state: RootState) => state.connection,
-  );
+  const { count, isConnected, selected, connectionInfo, transferring } =
+    useSelector((state: RootState) => ({
+      ...state.connection,
+      ...state.allFiles,
+    }));
+
+  const { socket, setConnect } = useWebsocket();
 
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (!showScanner.active) {
-      receiverSocketRef.current?.close();
-      receiverSocketRef.current = null;
-      return;
-    }
-
     if (!scannerRef.current) {
       scannerRef.current = new Html5QrcodeScanner(
         "reader",
@@ -80,21 +73,19 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
 
     const handleScanSuccess = (res: string) => {
       try {
-        const info = JSON.parse(res) as ConnectionQrInfo;
-        const socket = new WebSocket(`ws://${info.ip_address}:${info.port}/ws`);
-        receiverSocketRef.current?.close();
-        receiverSocketRef.current = socket;
-
-        socket.onmessage = () => {
-          dispatch(
-            setConnection({ isConnected: true, role: "reciever", count: 1 }),
-          );
-          setShowScanner({ active: false, codeVal: "" });
-        };
-
-        socket.onerror = (err) => {
-          console.log(err);
-        };
+        const info = JSON.parse(res) as ConnectionInfo;
+        setConnect(true);
+        socket.current?.send(
+          JSON.stringify({ type: "NewConnection", payload: info.session_id }),
+        );
+        dispatch(
+          setConnection({
+            connectionInfo: info,
+            count: 1,
+            isConnected: socket.current ? true : false,
+            role: "reciever",
+          }),
+        );
       } catch (err) {
         console.log(err);
       }
@@ -111,11 +102,43 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
 
   const startServer = async () => {
     try {
-      const info = await invoke("create_conn_server");
+      const info = await invoke<ConnectionInfo>("create_conn_server");
+      setConnect(true);
       setShowQrCode({ active: true, codeVal: JSON.stringify(info) });
-      dispatch(
-        setConnection({ count: count + 1, isConnected: true, role: "sender" }),
-      );
+      if (socket.current)
+        socket.current.onmessage = (e: MessageEvent<SocketMessage>) => {
+          const data = e.data;
+          switch (data.type) {
+            case "NewConnection":
+              dispatch(
+                setConnection({
+                  connectionInfo: connectionInfo,
+                  count: count + 1,
+                  isConnected: true,
+                  role: "sender",
+                }),
+              );
+              break;
+            case "Progress":
+              const temp = transferring;
+              const newTransfer = e.data.payload as Transfer;
+              const alreadyExists = temp.find((file) =>
+                determineFilesEqual(file, newTransfer),
+              );
+              if (newTransfer.current >= newTransfer.total)
+                temp.filter((file) => determineFilesEqual(file, newTransfer));
+              if (alreadyExists)
+                temp.map((file) =>
+                  determineFilesEqual(file, newTransfer)
+                    ? { ...file, current: newTransfer.current }
+                    : file,
+                );
+              dispatch(modifyTransferring(temp));
+              break;
+            default:
+              break;
+          }
+        };
     } catch (err) {
       console.log(err);
     }
@@ -126,7 +149,14 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
       const info = await invoke("disconnect_server");
       console.log(info);
       setShowQrCode({ active: false, codeVal: "" });
-      dispatch(setConnection({ count: 0, isConnected: false, role: "sender" }));
+      dispatch(
+        setConnection({
+          count: 0,
+          isConnected: false,
+          role: "sender",
+          connectionInfo: { ip_address: "", port: "", session_id: "" },
+        }),
+      );
     } catch (err) {
       console.log(err);
     }
@@ -138,6 +168,16 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
 
   const closeScanner = () => {
     setShowScanner({ active: false, codeVal: "" });
+  };
+
+  const { sendFile } = useSendFiles();
+
+  const sendSelected = async () => {
+    await Promise.all(
+      selected.map((file) => {
+        sendFile(file, file.type);
+      }),
+    );
   };
 
   return (
@@ -170,7 +210,9 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
         <nav className="md:h-full w-full z-15 fixed md:sticky flex flex-col gap-2 items-center justify-center bottom-3 left-0">
           <div className="md:hidden flex w-full gap-2 px-3 items-center">
             {isConnected ? (
-              <Button width="w-full">Send</Button>
+              <Button attrs={{ onClick: sendSelected }} width="w-full">
+                Send {selected.length > 0 && ` ${selected.length}`}
+              </Button>
             ) : (
               <>
                 <Button
@@ -205,7 +247,9 @@ const AppNavigation = ({ children }: { children: ReactNode }) => {
           <div className="hidden fixed right-0 bottom-9 md:flex justify-center items-center w-[75%]">
             <div className="flex w-full items-center gap-3 max-w-160">
               {isConnected ? (
-                <Button width="w-full">Send</Button>
+                <Button attrs={{ onClick: sendSelected }} width="w-full">
+                  Send {selected.length > 0 && ` ${selected.length}`}
+                </Button>
               ) : (
                 <>
                   <Button

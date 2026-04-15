@@ -1,25 +1,25 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { ConnectionState } from "../types";
 
-interface ConnectionState {
-    isConnected: boolean,
-    role: "sender" | "reciever"
-    count: number 
-}
-
-const initialState: ConnectionState = {isConnected: false, role: "reciever", count: 0}
+const initialState: ConnectionState = {
+  isConnected: false,
+  role: "reciever",
+  count: 0,
+  connectionInfo: { ip_address: "", port: "", session_id: "" },
+};
 
 const connectionSlice = createSlice({
-    name: "connection",
-    initialState,
-    reducers: {
-        setConnection: (state, {payload}: {payload: ConnectionState})=>{
-            state = payload
-        }
-    }
-})
+  name: "connection",
+  initialState,
+  reducers: {
+    setConnection: (_state, { payload }: { payload: ConnectionState }) => {
+      return payload;
+    },
+  },
+});
 
-const connectionReducer = connectionSlice.reducer
+const connectionReducer = connectionSlice.reducer;
 
-export default connectionReducer
+export default connectionReducer;
 
-export const {setConnection} = connectionSlice.actions
+export const { setConnection } = connectionSlice.actions;

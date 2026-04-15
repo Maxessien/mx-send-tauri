@@ -7,12 +7,13 @@ use futures_util::lock::Mutex;
 use local_ip_address::local_ip;
 use serde::Serialize;
 use tauri::Manager;
-use tokio::{fs::File, io::AsyncReadExt};
+use tokio::{fs::File, io::{AsyncReadExt, AsyncWriteExt}};
 use uuid::Uuid;
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
 pub(crate) mod axum;
 pub(crate) mod handler;
+pub(crate) mod file_types;
 pub(crate) mod websocket;
 
 pub struct SessionId(Uuid);
@@ -60,42 +61,6 @@ struct FileRes {
     file_path: PathBuf,
 }
 
-pub const AUDIO_EXTS: &[&str] = &[
-    "mp3", "wav", "flac", "aac", "ogg", "wma", "m4a", "aiff", "aif", "mid", "midi", "amr", "ape",
-    "au", "mka", "opus", "ra", "wavpack", "wv", "pcm", "dsd", "dff", "dsf",
-];
-
-pub const VIDEO_EXTS: &[&str] = &[
-    "mp4", "mkv", "avi", "mov", "wmv", "webm", "flv", "mpg", "mpeg", "m4v", "3gp", "3g2", "vob",
-    "ogv", "asf", "rm", "rmvb", "ts", "m2ts", "mts", "divx", "f4v", "qt",
-];
-
-pub const IMAGE_EXTS: &[&str] = &["jpg", "jpeg", "png", "gif", "webp"];
-
-pub const DOCUMENT_EXTS: &[&str] = &[
-    "pdf", "doc", "docx", "txt", "rtf", "odt", "pages", "wpd", "tex", "epub", "mobi", "azw",
-    "azw3", "csv", "xls", "xlsx", "ods", "ppt", "pptx", "odp",
-];
-
-fn filter_files(file_type: &handler::FileType, entry: &DirEntry) -> bool {
-    let extensions = match file_type {
-        handler::FileType::Audio => AUDIO_EXTS,
-        handler::FileType::Image => IMAGE_EXTS,
-        handler::FileType::Video => VIDEO_EXTS,
-        handler::FileType::Document => DOCUMENT_EXTS,
-        _ => return false,
-    };
-    let entry_ext = match entry.path().extension() {
-        Some(val) => match val.to_str() {
-            Some(ext) => ext.to_lowercase(),
-            None => return false,
-        },
-        None => return false,
-    };
-    let allowed = entry.path().is_file() && extensions.contains(&entry_ext.as_str());
-    allowed
-}
-
 #[tauri::command]
 async fn list_files(
     app_handle: tauri::AppHandle,
@@ -114,7 +79,7 @@ async fn list_files(
             let entries = walker
                 .into_iter()
                 .filter_map(|e| e.ok())
-                .filter(|e| filter_files(&file_type, e));
+                .filter(|e| file_types::matches_file_type(&file_type, e));
 
             for e in entries {
                 let name = match e.file_name().to_str() {
@@ -153,6 +118,26 @@ async fn get_file(file_path: PathBuf) -> Result<Vec<u8>, String> {
     Ok(buff)
 }
 
+#[tauri::command]
+async fn save_file(app_handle: tauri::AppHandle, bytes: Vec<u8>, file_name: String, file_type: handler::FileType)->Result<String, String>{
+    
+    let mut download_dir = match app_handle.path().download_dir() {
+        Ok(dir) => dir,
+        Err(_) => return Err(String::from("Failed to get app folder")),
+    };
+    let sub_folder = file_types::folder_name(&file_type);
+    download_dir.push(format!("mxsend/{}/{}", sub_folder, file_name));
+    let mut file = match File::create_new(&download_dir).await {
+        Ok(f) => f,
+        Err(_) => return Err(String::from("Failed to create file")),
+    };
+
+    match file.write_all(&bytes).await {
+        Ok(_) => Ok(String::from("Saved")),
+        Err(_) => Err(String::from("Failed to write to file")),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -161,7 +146,7 @@ pub fn run() {
             create_conn_server,
             disconnect_server,
             list_files,
-            get_file
+            get_file, save_file
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(SessionId(Uuid::new_v4())))

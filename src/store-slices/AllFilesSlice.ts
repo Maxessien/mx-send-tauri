@@ -1,26 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { AllFilesState, FileRes, FileResType, Transfer } from "../types";
 
-export type FileResType = "audio" | "video" | "document" | "images";
-
-export interface FileRes {
-  file_name: string;
-  file_size: number;
-  file_path: string;
-}
-
-interface AllFiles {
-  audio: FileRes[];
-  video: FileRes[];
-  document: FileRes[];
-  images: FileRes[];
-  selected: FileRes[];
-}
-
-const initialState: AllFiles = {
+const initialState: AllFilesState = {
   audio: [],
   document: [],
   images: [],
   video: [],
+  transferring: [],
   selected: [],
 };
 
@@ -55,9 +41,19 @@ const allFiles = createSlice({
           file_name !== payload.file_name && file_path !== payload.file_path,
       );
     },
+    modifyTransferring: (state, { payload }: { payload: Transfer[] }) => {
+      state.transferring = payload;
+    },
   },
 });
 
 export default allFiles.reducer;
 
-export const { addManyFiles, addOneFile, replaceAllFiles, addSelected, removeSelected } = allFiles.actions;
+export const {
+  addManyFiles,
+  addOneFile,
+  replaceAllFiles,
+  addSelected,
+  removeSelected,
+  modifyTransferring,
+} = allFiles.actions;

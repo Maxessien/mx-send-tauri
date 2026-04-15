@@ -1,20 +1,16 @@
 import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "../../store"
 import { addSelected, removeSelected } from "../../store-slices/allFilesSlice"
+import { formatFileSize } from "../../utils/file-utils"
+import { TabListItemProps } from "../../types"
 
 
-const formatFileSize = (size: number)=> {
-  if (size < Math.pow(1024, 2)) return `${(size / 1024).toFixed(0)} KB`
-  if (size >= Math.pow(1024, 2) && size < (Math.pow(1024, 3))) return `${(size / Math.pow(1024, 2)).toFixed(1)} MB`
-  else return `${(size / Math.pow(1024, 3)).toFixed(1)} GB`
-}
-
-const TabListItem = ({fileName, filePath, fileSize, previewImgUrl}: {fileName: string, fileSize: number, filePath: string, previewImgUrl: string}) => {
+const TabListItem = ({ fileName, filePath, fileSize, previewImgUrl, type }: TabListItemProps) => {
   const {selected} = useSelector((state: RootState)=>state.allFiles)
   const dispatch = useDispatch()
 
   const handleSelection = ()=>{
-    const fileRes = {file_name: fileName, file_path: filePath, file_size: fileSize}
+    const fileRes = {file_name: fileName, file_path: filePath, file_size: fileSize, type}
     const isSelected = selected.find(({file_name, file_path})=> fileName === file_name && filePath === file_path)
     isSelected ? dispatch(removeSelected(fileRes)) : dispatch(addSelected(fileRes))
   }

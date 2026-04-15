@@ -18,6 +18,7 @@ use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 
 use crate::axum::AllowedFileList;
+use crate::file_types::folder_name;
 use crate::SessionId;
 
 type HttpRequest = axum::http::Request<Body>;
@@ -93,13 +94,7 @@ pub async fn upload_file(
         Ok(dir) => dir,
         Err(_) => return StatusCode::EXPECTATION_FAILED,
     };
-    let sub_folder = match query.file_type {
-        FileType::Audio => String::from("audio"),
-        FileType::Document => String::from("document"),
-        FileType::Image => String::from("image"),
-        FileType::Video => String::from("video"),
-        FileType::Other => String::from("other"),
-    };
+    let sub_folder = folder_name(&query.file_type);
 
     let safe_name = std::path::Path::new(&query.name)
         .file_name()

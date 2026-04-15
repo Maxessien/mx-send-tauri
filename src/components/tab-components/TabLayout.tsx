@@ -4,14 +4,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import Button from "../reusable-components/Button";
 import TabListItem from "./TabListItem";
+import { FILE_PREVIEW_IMAGES } from "../../utils/file-utils";
 
-
-const fileImages = {
-  audio: "/audio-icon.jpg",
-  video: "/icons8-video-100.png",
-  document: "/document-icon.png",
-  images: "/icons8-image-100.png",
-}
 
 const TabLayout = () => {
   const [input, setInput] = useState("");
@@ -56,7 +50,8 @@ const TabLayout = () => {
                 fileName={file_name}
                 filePath={file_path}
                 fileSize={file_size}
-                previewImgUrl={fileImages?.[activeTab]}
+                type={activeTab}
+                previewImgUrl={FILE_PREVIEW_IMAGES[activeTab]}
               />
             );
           })

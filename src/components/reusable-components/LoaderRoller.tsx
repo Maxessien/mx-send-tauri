@@ -1,14 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-
-
-interface LoadRollerProps {
-  className?: string;
-  containerClassName?: string;
-  strokeWidth?: number;
-  duration?: number;
-}
+import { LoadRollerProps } from "../../types";
 
 const LoadRoller = ({ className = "", containerClassName="", strokeWidth = 8, duration = 1 }: LoadRollerProps) => {
 

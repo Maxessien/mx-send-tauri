@@ -2,44 +2,29 @@ import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
-import {
-  addManyFiles,
-  FileRes,
-  FileResType,
-} from "../store-slices/allFilesSlice";
+import { addManyFiles, modifyTransferring } from "../store-slices/allFilesSlice";
+import { FileRes, FileResType } from "../types";
+import { determineFilesEqual, getRustFileType } from "../utils/file-utils";
+import useWebsocket from "./useWebsocket";
 
 const useGetFiles = () => {
   const dispatch = useDispatch();
   const { activeTab } = useSelector((state: RootState) => state.activeTab);
 
   const getFiles = async (type: FileResType) => {
-    let rustEnum: "Video" | "Image" | "Audio" | "Document" | null = null;
-    switch (type) {
-      case "audio":
-        rustEnum = "Audio";
-        break;
-      case "document":
-        rustEnum = "Document";
-        break;
-      case "images":
-        rustEnum = "Image";
-        break;
-      case "video":
-        rustEnum = "Video";
-        break;
-      default:
-        break;
-    }
-    if (!rustEnum?.trim()) return;
+    const rustEnum = getRustFileType(type);
+    if (!rustEnum) return;
     try {
       const files = await invoke<FileRes[]>("list_files", {
         fileType: rustEnum,
       });
-      dispatch(addManyFiles({ type, info: files }));
-      return files
+      dispatch(
+        addManyFiles({ type, info: files.map((file) => ({ ...file, type })) }),
+      );
+      return files;
     } catch (err) {
       console.log(err);
-      throw err
+      throw err;
     }
   };
 
@@ -49,10 +34,66 @@ const useGetFiles = () => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
-    staleTime: 1000 * 60 * 60 * 6
+    staleTime: 1000 * 60 * 60 * 6,
   });
 
   return { getFiles, query };
+};
+
+export const useReciver = () => {
+  const { role, isConnected, connectionInfo, transferring } = useSelector(
+    (state: RootState) => ({ ...state.connection, ...state.allFiles }),
+  );
+  const dispatch = useDispatch();
+  const { setConnect, socket } = useWebsocket(false);
+
+  const downloadVideo = (fileId: string, fileInfo: FileRes) => {
+    if (!isConnected || role !== "reciever") return;
+    try {
+      setConnect(true);
+      const xml = new XMLHttpRequest();
+      xml.open(
+        "GET",
+        `http://${connectionInfo.ip_address}:${connectionInfo.port}?file_id=${fileId}`,
+      );
+      xml.setRequestHeader(
+        "Authorisation",
+        `Bearer ${connectionInfo.session_id}`,
+      );
+      xml.onloadstart = () => {
+        const temp = transferring;
+        temp.push({
+          current: 0,
+          file_name: fileInfo.file_name,
+          file_path: fileInfo.file_path,
+          file_size: fileInfo.file_size,
+          total: fileInfo.file_size,
+          type: fileInfo.type,
+        });
+        dispatch(modifyTransferring(temp));
+      };
+      xml.onprogress = (e) => {
+        if (e.lengthComputable) {
+          if (socket.current)
+            socket.current.send(
+              JSON.stringify({
+                type: "Progress",
+                payload: { ...fileInfo, total: e.total, current: e.loaded },
+              }),
+            );
+        }
+      };
+      xml.onload = () => {
+        const temp = transferring;
+        temp.filter((file) => determineFilesEqual(file, fileInfo));
+        dispatch(modifyTransferring(temp));
+      };
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  return { downloadVideo };
 };
 
 export { useGetFiles };

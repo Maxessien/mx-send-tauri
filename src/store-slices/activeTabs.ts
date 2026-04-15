@@ -1,23 +1,21 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { FileResType } from "./allFilesSlice";
+import { ActiveTabState, FileResType } from "../types";
 
 
-const initialState: {
-    activeTab: FileResType
-} = {activeTab: "audio"}
+const initialState: ActiveTabState = { activeTab: "audio" };
 
 const activeTab = createSlice({
     name: "activeTab",
     initialState,
     reducers: {
-        changeTab: (state, {payload}: {payload: FileResType})=>{
-            state.activeTab = payload
-        }
-    }
-})
+        changeTab: (state, { payload }: { payload: FileResType }) => {
+            state.activeTab = payload;
+        },
+    },
+});
 
-const activeTabReducer = activeTab.reducer
+const activeTabReducer = activeTab.reducer;
 
-export default activeTabReducer
+export default activeTabReducer;
 
-export const {changeTab} = activeTab.actions
+export const { changeTab } = activeTab.actions;

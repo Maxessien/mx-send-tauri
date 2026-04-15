@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::response::IntoResponse;
 use serde::{Serialize, Deserialize};
@@ -8,9 +10,9 @@ pub async fn ws_handler(ws: WebSocketUpgrade)-> impl IntoResponse {
 
 
 #[derive(Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(tag = "type", rename_all = "camelCase", content="payload")]
 enum Messages {
-    Progress {current: u64, total: u64},
+    Progress {current: u64, total: u64, file_name: String, file_size: String, file_type: String, file_path: PathBuf},
     Newfile(String),
     NewConnection(String)
 }
@@ -39,8 +41,8 @@ pub async  fn ws_fn(mut socket: WebSocket){
                             Err(_)=>()
                         }
                     },
-                    Messages::Progress { current, total }=>{
-                        let e = Messages::Progress { current, total };
+                    Messages::Progress { current, total, file_path, file_name, file_size, file_type }=>{
+                        let e = Messages::Progress { current, total, file_name, file_path, file_size, file_type };
                         let socket_res = socket.send(Message::Text(serde_json::to_string(&e).unwrap().into())).await;
                         match socket_res {
                             Ok(_)=>(),
