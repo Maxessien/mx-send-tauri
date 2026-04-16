@@ -4,10 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import {
   addManyFiles,
-  modifyTransferring,
+  updateTransferProgress,
 } from "../store-slices/allFilesSlice";
 import { ActiveTab, FileRes, FileResType } from "../types";
-import { determineTransfersEqual, getRustFileType } from "../utils/file-utils";
+import { getRustFileType } from "../utils/file-utils";
 import useWebsocket from "./useWebsocket";
 
 const useGetFiles = (fileType: FileResType, queryOptions?: UndefinedInitialDataOptions<FileRes[], Error, FileRes[], ActiveTab[]>) => {
@@ -50,7 +50,7 @@ const useGetFiles = (fileType: FileResType, queryOptions?: UndefinedInitialDataO
 };
 
 const useReceiver = () => {
-  const { role, isConnected, connectionInfo, transferring, appSession } = useSelector(
+  const { role, isConnected, connectionInfo, appSession } = useSelector(
     (state: RootState) => ({ ...state.connection, ...state.allFiles, appSession: state.appSession }),
   );
   const dispatch = useDispatch();
@@ -89,10 +89,7 @@ const useReceiver = () => {
       };
       xml.onload = async () => {
         const fileInfo = constructFileInfo(xml)
-        const updated = transferring.filter(
-          (file) => fileInfo ? !determineTransfersEqual({...fileInfo, sender_id: appSession}, file) : false,
-        );
-        dispatch(modifyTransferring(updated));
+        dispatch(updateTransferProgress({...fileInfo, sender_id: appSession, current: 0, total: 0}));
         const bytes = xml.status === 200 ? xml.response : null;
         await invoke("save_file", {
           fileName: fileInfo.file_name,

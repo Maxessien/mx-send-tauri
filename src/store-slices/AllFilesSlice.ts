@@ -42,9 +42,6 @@ const allFiles = createSlice({
           file_name !== payload.file_name && file_path !== payload.file_path,
       );
     },
-    modifyTransferring: (state, { payload }: { payload: Transfer[] }) => {
-      state.transferring = payload;
-    },
     updateTransferProgress: (state, { payload }: { payload: Transfer }) => {
       const newTransfer = payload;
       const existing = state.transferring.find((f) =>
@@ -70,6 +67,5 @@ export const {
   replaceAllFiles,
   addSelected,
   removeSelected,
-  modifyTransferring,
   updateTransferProgress,
 } = allFiles.actions;
