@@ -1,4 +1,4 @@
-import { FileRes, FileResType } from "../types";
+import { FileRes, FileResType, Transfer } from "../types";
 
 export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
   audio: "/audio-icon.jpg",
@@ -8,8 +8,19 @@ export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
 };
 
 export const determineFilesEqual = (file1: FileRes, file2: FileRes) => {
-  return file1.file_name === file2.file_name && file1.file_path === file2.file_path;
+  return (
+    file1.file_name === file2.file_name && file1.file_path === file2.file_path
+  );
 };
+
+export const determineTransfersEqual = (
+  transfer1: Omit<Transfer, "current" | "total">,
+  transfer2: Omit<Transfer, "current" | "total">,
+) =>
+  determineFilesEqual(transfer1, transfer2) &&
+  transfer1.sender_id === transfer2.sender_id;
+
+
 export const formatFileSize = (size: number) => {
   if (size < Math.pow(1024, 2)) return `${(size / 1024).toFixed(0)} KB`;
   if (size >= Math.pow(1024, 2) && size < Math.pow(1024, 3)) {
@@ -34,9 +45,9 @@ export const getRustFileType = (type: FileResType) => {
   }
 };
 
-export const capitalise = (word: string)=>{
-  const first = word.slice(0, 1)
-  const rest = word.slice(1)
+export const capitalise = (word: string) => {
+  const first = word.slice(0, 1);
+  const rest = word.slice(1);
 
-  return first.toUpperCase() + rest
-}
+  return first.toUpperCase() + rest;
+};

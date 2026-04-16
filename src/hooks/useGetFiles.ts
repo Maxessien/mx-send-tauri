@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { UndefinedInitialDataOptions, useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
@@ -6,15 +6,14 @@ import {
   addManyFiles,
   modifyTransferring,
 } from "../store-slices/allFilesSlice";
-import { FileRes, FileResType } from "../types";
-import { determineFilesEqual, getRustFileType } from "../utils/file-utils";
+import { ActiveTab, FileRes, FileResType } from "../types";
+import { determineTransfersEqual, getRustFileType } from "../utils/file-utils";
 import useWebsocket from "./useWebsocket";
 
-const useGetFiles = () => {
+const useGetFiles = (fileType: FileResType, queryOptions?: UndefinedInitialDataOptions<FileRes[], Error, FileRes[], ActiveTab[]>) => {
   const dispatch = useDispatch();
-  const { activeTab, transferring } = useSelector((state: RootState) => ({
-    ...state.activeTab,
-    ...state.allFiles,
+  const { transferring } = useSelector((state: RootState) => ({
+    ...state.allFiles
   }));
 
   const getFiles = async (type: FileResType) => {
@@ -35,31 +34,31 @@ const useGetFiles = () => {
   };
 
   const query = useQuery({
-    queryKey: [activeTab],
-    queryFn: ({ queryKey }) => {
-      if (queryKey?.[0] === "transferring") return transferring;
-      else return getFiles(queryKey?.[0]);
-    },
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
     staleTime: 1000 * 60 * 60 * 6,
+    ...queryOptions,
+    queryKey: [fileType],
+    queryFn: ({ queryKey }) => {
+      if (queryKey?.[0] === "transfers") return transferring;
+      else return getFiles(queryKey?.[0]);
+    },
   });
 
-  return { getFiles, query };
+  return { query };
 };
 
 const useReceiver = () => {
-  const { role, isConnected, connectionInfo, transferring } = useSelector(
-    (state: RootState) => ({ ...state.connection, ...state.allFiles }),
+  const { role, isConnected, connectionInfo, transferring, appSession } = useSelector(
+    (state: RootState) => ({ ...state.connection, ...state.allFiles, appSession: state.appSession }),
   );
   const dispatch = useDispatch();
-  const { setConnect, socket } = useWebsocket(false);
+  const { socket } = useWebsocket();
 
   const downloadVideo = (fileId: string) => {
     if (!isConnected || role !== "receiver") return;
     try {
-      setConnect(true);
       const xml = new XMLHttpRequest();
       xml.open(
         "GET",
@@ -89,7 +88,7 @@ const useReceiver = () => {
       };
       xml.onload = async () => {
         const updated = transferring.filter(
-          (file) => !determineFilesEqual(file, fileInfo),
+          (file) => !determineTransfersEqual({...fileInfo, sender_id: appSession}, file),
         );
         dispatch(modifyTransferring(updated));
         const bytes = xml.status === 200 ? xml.response : null;

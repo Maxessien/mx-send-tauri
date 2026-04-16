@@ -2,13 +2,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { FileRes, FileResType } from "../types";
-import { capitalise, determineFilesEqual } from "../utils/file-utils";
+import { capitalise, determineTransfersEqual } from "../utils/file-utils";
 import useWebsocket from "./useWebsocket";
 import { modifyTransferring } from "../store-slices/allFilesSlice";
 
 const useSendFiles = () => {
-  const { isConnected, role, connectionInfo, transferring } = useSelector(
-    (state: RootState) => ({ ...state.connection, ...state.allFiles }),
+  const { isConnected, role, connectionInfo, transferring, appSession } = useSelector(
+    (state: RootState) => ({ ...state.connection, ...state.allFiles, appSession: state.appSession }),
   );
   const dispatch = useDispatch();
   const { socket } = useWebsocket();
@@ -44,7 +44,7 @@ const useSendFiles = () => {
         };
         xml.onload = async () => {
           const updated = transferring.filter(
-            (file1) => !determineFilesEqual(file, file1),
+            (file1) => !determineTransfersEqual({...file, sender_id: appSession}, file1),
           );
           dispatch(modifyTransferring(updated));
           const bytes = xml.status === 200 ? xml.response : null;

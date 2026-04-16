@@ -1,9 +1,7 @@
-
+import { Tab } from "./AudioTab";
 
 const DocumentTab = () => {
-  return (
-    <div>DocumentTab</div>
-  )
-}
+  return <Tab tabTitle="Document Files" tabType="document" />;
+};
 
-export default DocumentTab
+export default DocumentTab;

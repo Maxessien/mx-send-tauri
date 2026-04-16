@@ -4,7 +4,7 @@ import { AllFilesState, FileRes, FileResType, Transfer } from "../types";
 const initialState: AllFilesState = {
   audio: [],
   document: [],
-  images: [],
+  image: [],
   video: [],
   transferring: [],
   selected: [],

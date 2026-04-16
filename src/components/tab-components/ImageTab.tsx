@@ -1,8 +1,9 @@
+import { Tab } from "./AudioTab"
 
 
 const ImageTab = () => {
   return (
-    <div>ImageTab</div>
+    <Tab tabType="image" tabTitle="Image Files" />
   )
 }
 

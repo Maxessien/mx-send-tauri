@@ -10,13 +10,14 @@ export interface FileRes {
 export interface Transfer extends FileRes {
   current: number;
   total: number;
+  sender_id: string
 }
 
 export interface AllFilesState {
   audio: FileRes[];
   video: FileRes[];
   document: FileRes[];
-  images: FileRes[];
+  image: FileRes[];
   transferring: Transfer[];
   selected: FileRes[];
 }

@@ -18,7 +18,7 @@ export interface TabListItemProps {
   fileName: string;
   fileSize: number;
   filePath: string;
-  previewImgUrl: string;
+  previewImgUrl?: string;
   type: FileResType;
 }
 

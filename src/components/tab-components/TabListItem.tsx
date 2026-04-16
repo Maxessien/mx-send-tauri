@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "../../store"
 import { addSelected, removeSelected } from "../../store-slices/allFilesSlice"
-import { formatFileSize } from "../../utils/file-utils"
+import { FILE_PREVIEW_IMAGES, formatFileSize } from "../../utils/file-utils"
 import { TabListItemProps } from "../../types"
 
 
@@ -19,7 +19,7 @@ const TabListItem = ({ fileName, filePath, fileSize, previewImgUrl, type }: TabL
     <>
     <div onClick={handleSelection} className="flex relative w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
         <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
-            <img className="object-cover object-center w-full h-full" src={previewImgUrl} alt="Image" />
+            <img className="object-cover object-center w-full h-full" src={previewImgUrl || FILE_PREVIEW_IMAGES?.[type]} alt="Image" />
         </div>
         <div className="space-y-2 min-w-20 flex-1">
             <p className="sm:text-base text-sm wrap-break-word font-medium text-left">{fileName}</p>

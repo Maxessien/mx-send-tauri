@@ -1,9 +1,7 @@
-
+import { Tab } from "./AudioTab";
 
 const VideoTab = () => {
-  return (
-    <div>VideoTab</div>
-  )
-}
+  return <Tab tabType="video" tabTitle="Video Files" />;
+};
 
-export default VideoTab
+export default VideoTab;

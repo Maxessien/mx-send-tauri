@@ -4,6 +4,7 @@ import AudioTab from "./components/tab-components/AudioTab"
 import DocumentTab from "./components/tab-components/DocumentTab"
 import VideoTab from "./components/tab-components/VideoTab"
 import ImageTab from "./components/tab-components/ImageTab"
+import TransferTab from "./components/tab-components/TransferTab"
 
 
 const App = () => {
@@ -15,6 +16,7 @@ const App = () => {
           <Route path="/document" element={<DocumentTab />} />
           <Route path="/video" element={<VideoTab />} />
           <Route path="/image" element={<ImageTab />} />
+          <Route path="/transfers" element={<TransferTab />} />
         </Routes>
       </AppWrapper>
     </BrowserRouter>

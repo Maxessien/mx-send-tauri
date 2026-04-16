@@ -5,6 +5,11 @@ import { FaImage, FaMusic, FaVideo } from "react-icons/fa";
 import { FiLoader } from "react-icons/fi";
 import useWebsocket from "../../hooks/useWebsocket";
 import ActionBtns from "./ActionBtns";
+import QrCodeDisplay from "./QrCodeDisplay";
+import { invoke } from "@tauri-apps/api/core";
+import { useDispatch } from "react-redux";
+import { setConnection } from "../../store-slices/connectionSlice";
+import QrScanner from "./QrScanner";
 
 export interface ScannerState {
   active: boolean;
@@ -21,14 +26,40 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     codeVal: "",
   });
 
+  const dispatch = useDispatch();
 
+  const stopServer = async () => {
+    try {
+      await invoke("disconnect_server");
+      setShowQrCode({ active: false, codeVal: "" });
+      dispatch(
+        setConnection({
+          count: 0,
+          isConnected: false,
+          role: "receiver",
+          connectionInfo: { ip_address: "", port: "", session_id: "" },
+        }),
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  };
   //Call websocket hook to initiate use effect that initiates socket globally when isConnected is true
   const {} = useWebsocket();
 
   return (
     <div className="w-screen flex flex-col h-screen min-h-150">
       <AppHeader />
+      <QrScanner
+        closeScanner={() => setShowScanner({ active: false, codeVal: "" })}
+      />
       <main className="w-full flex-1 grid grid-cols-[25%_75%]">
+        {showQrCode.active && (
+          <QrCodeDisplay
+            stopServer={stopServer}
+            qrcodeVal={showQrCode.codeVal}
+          />
+        )}
         <aside className="md:h-full w-full z-15 fixed md:sticky flex flex-col gap-2 items-center justify-center bottom-3 left-0">
           <ActionBtns
             openScanner={() => setShowScanner({ active: true, codeVal: "" })}
@@ -44,7 +75,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
             <AppNavItem
               active="transfers"
               icon={<FiLoader />}
-              title="Document"
+              title="Transfers"
             />
           </nav>
         </aside>

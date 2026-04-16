@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import activeTabReducer from "./store-slices/activeTabs";
 import allFilesReducer from "./store-slices/allFilesSlice";
 import connectionReducer from "./store-slices/connectionSlice";
+import appSessionReducer from "./store-slices/appSession";
 
 
 const store = configureStore({
@@ -9,6 +10,7 @@ const store = configureStore({
         allFiles: allFilesReducer,
         activeTab: activeTabReducer,
         connection: connectionReducer,
+        appSession: appSessionReducer
     }
 })
 

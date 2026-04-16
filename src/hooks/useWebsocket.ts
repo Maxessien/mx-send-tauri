@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { setConnection } from "../store-slices/connectionSlice";
-import { determineFilesEqual } from "../utils/file-utils";
+import { determineTransfersEqual } from "../utils/file-utils";
 import { modifyTransferring } from "../store-slices/allFilesSlice";
 import { SocketMessage, Transfer } from "../types";
 
@@ -41,11 +41,11 @@ const useWebsocket = () => {
           case "Progress":
             const newTransfer = data.payload as Transfer;
             const alreadyExists = transferring.find((file) =>
-              determineFilesEqual(file, newTransfer),
+              determineTransfersEqual(file, newTransfer),
             );
             if (newTransfer.current >= newTransfer.total) {
               const updated = transferring.filter(
-                (file) => !determineFilesEqual(file, newTransfer),
+                (file) => !determineTransfersEqual(file, newTransfer),
               );
               dispatch(modifyTransferring(updated));
               break;
@@ -54,7 +54,7 @@ const useWebsocket = () => {
             if (!alreadyExists) break;
 
             const updated = transferring.map((file) =>
-              determineFilesEqual(file, newTransfer)
+              determineTransfersEqual(file, newTransfer)
                 ? { ...file, current: newTransfer.current }
                 : file,
             );
