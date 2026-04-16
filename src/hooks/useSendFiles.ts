@@ -31,7 +31,7 @@ const useSendFiles = () => {
           "Authorization",
           `Bearer ${connectionInfo.session_id}`,
         );
-        xml.onprogress = (e) => {
+        xml.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             if (socket.current)
               socket.current.send(
@@ -47,12 +47,6 @@ const useSendFiles = () => {
             (file1) => !determineTransfersEqual({...file, sender_id: appSession}, file1),
           );
           dispatch(modifyTransferring(updated));
-          const bytes = xml.status === 200 ? xml.response : null;
-          await invoke("save_file", {
-            fileName: file.file_name,
-            fileType: file.type,
-            bytes,
-          });
         };
         xml.send(fileBytes);
         xml.onerror = () => {

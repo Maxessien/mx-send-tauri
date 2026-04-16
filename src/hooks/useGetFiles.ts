@@ -56,6 +56,13 @@ const useReceiver = () => {
   const dispatch = useDispatch();
   const { socket } = useWebsocket();
 
+  const constructFileInfo = (xml: XMLHttpRequest)=>({
+        file_name: xml.getResponseHeader("file_name") || "",
+        file_path: xml.getResponseHeader("file_path") || "",
+        file_size: Number(xml.getResponseHeader("file_size")) || 0,
+        type: (xml.getResponseHeader("file_type") as FileResType) || "",
+      })
+
   const downloadVideo = (fileId: string) => {
     if (!isConnected || role !== "receiver") return;
     try {
@@ -68,16 +75,10 @@ const useReceiver = () => {
         "Authorization",
         `Bearer ${connectionInfo.session_id}`,
       );
-      const res = xml.getResponseHeader;
-      const fileInfo = {
-        file_name: res("file_name") || "",
-        file_path: res("file_path") || "",
-        file_size: Number(res("file_size")) || 0,
-        type: (res("file_type") as FileResType) || "",
-      };
       xml.onprogress = (e) => {
+        const fileInfo = constructFileInfo(xml)
         if (e.lengthComputable) {
-          if (socket.current)
+          if (socket.current && fileInfo)
             socket.current.send(
               JSON.stringify({
                 type: "Progress",
@@ -87,8 +88,9 @@ const useReceiver = () => {
         }
       };
       xml.onload = async () => {
+        const fileInfo = constructFileInfo(xml)
         const updated = transferring.filter(
-          (file) => !determineTransfersEqual({...fileInfo, sender_id: appSession}, file),
+          (file) => fileInfo ? !determineTransfersEqual({...fileInfo, sender_id: appSession}, file) : false,
         );
         dispatch(modifyTransferring(updated));
         const bytes = xml.status === 200 ? xml.response : null;
@@ -99,8 +101,9 @@ const useReceiver = () => {
         });
       };
       xml.onerror = () => {
-        console.error("Download failed for file:", fileInfo.file_name);
+        console.error("Download failed for file:", fileId);
       };
+      xml.responseType = "arraybuffer"
       xml.send();
     } catch (err) {
       console.log(err);
