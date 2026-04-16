@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { AllFilesState, FileRes, FileResType, Transfer } from "../types";
+import { determineTransfersEqual } from "../utils/file-utils";
 
 const initialState: AllFilesState = {
   audio: [],
@@ -44,6 +45,20 @@ const allFiles = createSlice({
     modifyTransferring: (state, { payload }: { payload: Transfer[] }) => {
       state.transferring = payload;
     },
+    updateTransferProgress: (state, { payload }: { payload: Transfer }) => {
+      const newTransfer = payload;
+      const existing = state.transferring.find((f) =>
+        determineTransfersEqual(f, newTransfer),
+      );
+
+      if (newTransfer.current >= newTransfer.total) {
+        state.transferring = state.transferring.filter(
+          (f) => !determineTransfersEqual(f, newTransfer),
+        );
+      } else if (existing) {
+        existing.current = newTransfer.current;
+      }
+    },
   },
 });
 
@@ -56,4 +71,5 @@ export const {
   addSelected,
   removeSelected,
   modifyTransferring,
+  updateTransferProgress,
 } = allFiles.actions;

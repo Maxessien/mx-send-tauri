@@ -2,12 +2,11 @@ import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { setConnection } from "../store-slices/connectionSlice";
-import { determineTransfersEqual } from "../utils/file-utils";
-import { modifyTransferring } from "../store-slices/allFilesSlice";
+import { updateTransferProgress } from "../store-slices/allFilesSlice";
 import { SocketMessage, Transfer } from "../types";
 
 const useWebsocket = () => {
-  const { connectionInfo, isConnected, role, count, transferring } =
+  const { connectionInfo, isConnected, role, count } =
     useSelector((state: RootState) => ({
       ...state.connection,
       ...state.allFiles,
@@ -39,26 +38,7 @@ const useWebsocket = () => {
             );
             break;
           case "Progress":
-            const newTransfer = data.payload as Transfer;
-            const alreadyExists = transferring.find((file) =>
-              determineTransfersEqual(file, newTransfer),
-            );
-            if (newTransfer.current >= newTransfer.total) {
-              const updated = transferring.filter(
-                (file) => !determineTransfersEqual(file, newTransfer),
-              );
-              dispatch(modifyTransferring(updated));
-              break;
-            }
-
-            if (!alreadyExists) break;
-
-            const updated = transferring.map((file) =>
-              determineTransfersEqual(file, newTransfer)
-                ? { ...file, current: newTransfer.current }
-                : file,
-            );
-            dispatch(modifyTransferring(updated));
+            dispatch(updateTransferProgress(data.payload as Transfer));
             break;
           default:
             break;
