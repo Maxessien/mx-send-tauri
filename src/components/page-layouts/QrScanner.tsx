@@ -14,14 +14,21 @@ const scannerConfig = {
 };
 
 const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
-  const { setConnect, socket } = useWebsocket();
+  const { socket } = useWebsocket();
   const dispatch = useDispatch();
   const { downloadVideo } = useReceiver();
 
   const handleScanSuccess = (res: string) => {
     try {
       const info = JSON.parse(res) as ConnectionInfo;
-      setConnect(true);
+      dispatch(
+        setConnection({
+          connectionInfo: info,
+          count: 1,
+          isConnected: true,
+          role: "receiver",
+        }),
+      );
       socket.current?.send(
         JSON.stringify({ type: "NewConnection", payload: info.session_id }),
       );
@@ -31,17 +38,16 @@ const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
           if (data.type === "NewFile" && typeof data.payload === "string")
             downloadVideo(data.payload);
         };
+    } catch (err) {
+      console.log(err);
       dispatch(
         setConnection({
-          connectionInfo: info,
-          count: 1,
-          isConnected: socket.current ? true : false,
+          connectionInfo: { ip_address: "", port: "", session_id: "" },
+          count: 0,
+          isConnected: false,
           role: "receiver",
         }),
       );
-    } catch (err) {
-      console.log(err);
-      setConnect(false)
     }
   };
 

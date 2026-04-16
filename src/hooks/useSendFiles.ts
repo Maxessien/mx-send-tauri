@@ -11,11 +11,10 @@ const useSendFiles = () => {
     (state: RootState) => ({ ...state.connection, ...state.allFiles }),
   );
   const dispatch = useDispatch();
-  const { setConnect, socket } = useWebsocket();
+  const { socket } = useWebsocket();
 
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
-    setConnect(true);
     try {
       const path =
         role === "receiver"
