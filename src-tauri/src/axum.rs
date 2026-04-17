@@ -3,9 +3,10 @@ use std::path::PathBuf;
 use axum::{
     http::Method,
     middleware,
-    routing::{any, get, post},
+    routing::{ get, post},
     Router,
 };
+use socketioxide::SocketIoBuilder;
 use std::sync::OnceLock;
 use tauri::AppHandle;
 use tokio::net::TcpListener;
@@ -23,7 +24,7 @@ pub struct FileInfo {
     pub size: u64,
     pub id: Uuid,
     pub path: PathBuf,
-    pub file_type: handler::FileType
+    pub file_type: handler::FileType,
 }
 
 pub struct AllowedFileList {
@@ -55,18 +56,27 @@ pub async fn create_server(app_handle: AppHandle) -> String {
         let _ = CANCEL_TOKEN.set(token.clone());
         let cors = CorsLayer::new()
             .allow_methods([Method::POST, Method::GET, Method::DELETE, Method::PATCH])
-            .allow_origin(Any);
+            .allow_origin(Any)
+            .allow_headers(Any)
+            .expose_headers([
+                "file_name".parse().unwrap(),
+                "file_path".parse().unwrap(),
+                "file_size".parse().unwrap(),
+                "file_type".parse().unwrap(),
+            ]);
+        let (layer, io) = SocketIoBuilder::new().req_path("/ws").build_layer();
+        io.ns("/", websocket::handle_socket);
         let app =
             Router::new()
                 .route("/upload", post(handler::add_to_filelist))
                 .route("/download", get(handler::download_from_filelist))
                 .route("/receiver/upload", post(handler::upload_file))
-                .route("/ws", any(websocket::ws_handler))
                 .route_layer(ServiceBuilder::new().layer(cors).layer(
                     middleware::from_fn_with_state(app_handle.clone(), handler::verify_session_id),
                 ))
+                .layer(layer)
                 .with_state(app_handle);
-            axum::serve(listener, app)
+        axum::serve(listener, app)
             .with_graceful_shutdown(async move {
                 token.cancelled().await;
                 println!("Axum server stopped, but the app is still running!");

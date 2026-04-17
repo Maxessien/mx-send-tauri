@@ -1,4 +1,4 @@
-import { JSX, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import AppHeader from "./AppHeader";
 import AppNavItem from "./AppNavItem";
 import { FaImage, FaMusic, FaVideo } from "react-icons/fa";
@@ -7,9 +7,11 @@ import useWebsocket from "../../hooks/useWebsocket";
 import ActionBtns from "./ActionBtns";
 import QrCodeDisplay from "./QrCodeDisplay";
 import { invoke } from "@tauri-apps/api/core";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setConnection } from "../../store-slices/connectionSlice";
 import QrScanner from "./QrScanner";
+import { useReceiver } from "../../hooks/useGetFiles";
+import { RootState } from "../../store";
 
 export interface ScannerState {
   active: boolean;
@@ -45,7 +47,25 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     }
   };
   //Call websocket hook to initiate use effect that initiates socket globally when isConnected is true
-  const {} = useWebsocket();
+  const { socket } = useWebsocket();
+  const { downloadVideo } = useReceiver();
+  const { connectionInfo, isConnected, role } = useSelector(
+    (state: RootState) => state.connection,
+  );
+
+  useEffect(() => {
+    if (isConnected && role === "receiver") {
+      socket.current?.emit("newConnection", connectionInfo.session_id);
+      if (socket.current)
+        socket.current.on("newFile", (data: string) => {
+          downloadVideo(data);
+        });
+    }
+
+    return () => {
+      socket.current?.off("newFile")
+    }
+  }, [isConnected, role]);
 
   return (
     <div className="w-screen flex flex-col h-screen min-h-150">

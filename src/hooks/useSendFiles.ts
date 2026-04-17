@@ -5,13 +5,18 @@ import { FileRes, FileResType } from "../types";
 import { capitalise } from "../utils/file-utils";
 import useWebsocket from "./useWebsocket";
 import { updateTransferProgress } from "../store-slices/allFilesSlice";
+import { listen } from "@tauri-apps/api/event"
 
 const useSendFiles = () => {
   const { isConnected, role, connectionInfo, appSession } = useSelector(
-    (state: RootState) => ({ ...state.connection, ...state.allFiles, appSession: state.appSession }),
+    (state: RootState) => ({
+      ...state.connection,
+      ...state.allFiles,
+      appSession: state.appSession,
+    }),
   );
-  const dispatch = useDispatch();
   const { socket } = useWebsocket();
+  const dispatch = useDispatch()
 
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
@@ -22,44 +27,24 @@ const useSendFiles = () => {
           : "upload";
       const url = `http://${connectionInfo.ip_address}:${connectionInfo.port}/${path}`;
       if (role === "receiver") {
-        const fileBytes = await invoke<ArrayBuffer>("get_file", {
-          filePath: file.file_path,
+        const unlisten = await listen<{total: number, current: number}>("progress", ({payload: {current}})=>{
+          socket.current?.emit("progress", {current, total: file.file_size, sender_id: appSession, ...file})
+          dispatch(updateTransferProgress({current, total: file.file_size, sender_id: appSession, ...file}))
+        })
+        await invoke("send_file", {
+          filePath: file.file_path, url, session_id: connectionInfo.session_id
         });
-        const xml = new XMLHttpRequest();
-        xml.open("POST", url);
-        xml.setRequestHeader(
-          "Authorization",
-          `Bearer ${connectionInfo.session_id}`,
-        );
-        xml.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            if (socket.current)
-              socket.current.send(
-                JSON.stringify({
-                  type: "Progress",
-                  payload: { ...file, total: e.total, current: e.loaded },
-                }),
-              );
-          }
-        };
-        xml.onload = async () => {
-          dispatch(updateTransferProgress({...file, sender_id: appSession, current: 0, total: 0}));
-        };
-        xml.send(fileBytes);
-        xml.onerror = () => {
-          throw new Error("Download failed for file: " + file.file_name);
-        };
+        unlisten()
+        dispatch(updateTransferProgress({ ...file, sender_id: appSession, current: file.file_size, total: file.file_size }));
       } else {
         const res = await fetch(url, {
           method: "POST",
           headers: { Authorization: `Bearer ${connectionInfo.session_id}` },
-          body: JSON.stringify({ path: file.file_path }),
+          body: JSON.stringify({ path: file.file_path, file_type:capitalise(type) }),
         });
         if (res.ok) {
           const id: string = await res.json();
-          socket.current?.send(
-            JSON.stringify({ type: "Newfile", payload: id }),
-          );
+          socket.current?.emit("newFile", id);
         }
         if (!res.ok)
           throw new Error(

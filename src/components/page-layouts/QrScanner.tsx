@@ -2,10 +2,8 @@ import { Html5QrcodeScanner } from "html5-qrcode";
 import { useEffect } from "react";
 import { HiX } from "react-icons/hi";
 import { useDispatch } from "react-redux";
-import useWebsocket from "../../hooks/useWebsocket";
 import { setConnection } from "../../store-slices/connectionSlice";
-import { ConnectionInfo, SocketMessage } from "../../types";
-import { useReceiver } from "../../hooks/useGetFiles";
+import { ConnectionInfo } from "../../types";
 
 const scannerConfig = {
   fps: 10,
@@ -14,9 +12,7 @@ const scannerConfig = {
 };
 
 const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
-  const { socket } = useWebsocket();
   const dispatch = useDispatch();
-  const { downloadVideo } = useReceiver();
 
   const handleScanSuccess = (res: string) => {
     try {
@@ -29,15 +25,7 @@ const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
           role: "receiver",
         }),
       );
-      socket.current?.send(
-        JSON.stringify({ type: "NewConnection", payload: info.session_id }),
-      );
-      if (socket.current)
-        socket.current.onmessage = (e: MessageEvent<string>) => {
-          const data = JSON.parse(e.data) as SocketMessage;
-          if (data.type === "NewFile" && typeof data.payload === "string")
-            downloadVideo(data.payload);
-        };
+      closeScanner()
     } catch (err) {
       console.log(err);
       dispatch(

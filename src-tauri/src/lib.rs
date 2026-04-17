@@ -3,17 +3,18 @@
 use std::path::PathBuf;
 
 use crate::axum::AllowedFileList;
-use futures_util::lock::Mutex;
+use async_stream::stream;
+use futures_util::{StreamExt, lock::Mutex};
 use local_ip_address::local_ip;
+use reqwest::{header, Body, ClientBuilder};
 use serde::Serialize;
-use tauri::Manager;
-use tokio::{
-    fs::File,
-    io::{AsyncReadExt, AsyncWriteExt},
-};
+use std::path::Path;
+use tauri::{Emitter, Manager};
+use tokio::{fs::File, io::AsyncWriteExt};
+use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 use walkdir::WalkDir;
-use std::path::Path;
+// use async_;
 
 pub(crate) mod axum;
 pub(crate) mod file_types;
@@ -41,8 +42,8 @@ async fn create_conn_server<'a>(
         Ok(addr) => addr.to_string(),
         Err(err) => {
             dbg!(err);
-            return Err(String::from("No Ip address found"))
-        },
+            return Err(String::from("No Ip address found"));
+        }
     };
     let res = CreateConnRes {
         session_id: id_state.0,
@@ -110,20 +111,46 @@ async fn list_files(
     .unwrap()
 }
 
+#[derive(Serialize)]
+#[derive(Clone)]
+struct ByteProgress {
+    current: usize,
+}
+
 #[tauri::command]
-async fn get_file(file_path: PathBuf) -> Result<Vec<u8>, String> {
-    let mut buff: Vec<u8> = Vec::new();
-    let mut file = match File::open(file_path).await {
+async fn send_file(file_path: PathBuf, url: String, session_id: String, app: tauri::AppHandle) -> Result<String, String> {
+    let mut headers = header::HeaderMap::new();
+    let sess_id = format!("Bearer {}", session_id);
+    let header_val = match header::HeaderValue::from_str(&sess_id) {
+        Ok(val) => val,
+        Err(_) => return Err("Couldn't set header".to_string()),
+    };
+    headers.insert(header::AUTHORIZATION, header_val);
+    let file = match File::open(file_path).await {
         Ok(f) => f,
         Err(_) => return Err(String::from("File not found")),
     };
-    match file.read_to_end(&mut buff).await {
-        Ok(_) => (),
-        Err(_) => return Err(String::from("Unable to read file")),
+    let mut curr = 0;
+    let mut reader_stream = ReaderStream::new(file);
+    let progress_stream = stream! {
+        while let Some(chunk) = reader_stream.next().await {
+        if let Ok(ref bytes) = chunk{
+            curr += bytes.len();
+            let _ = app.emit("progress", ByteProgress{current: curr});
+        };
+        yield chunk;
+    }
     };
-    Ok(buff)
+    let body = Body::wrap_stream(progress_stream);
+    let client = ClientBuilder::new()
+        .default_headers(headers)
+        .build()
+        .unwrap();
+    match client.post(url).body(body).send().await {
+        Ok(_) => Ok("Sent".to_string()),
+        Err(_) => Err("Failed to send".to_string()),
+    }
 }
-
 
 #[tauri::command]
 async fn save_file(
@@ -148,7 +175,7 @@ async fn save_file(
 
     let sub_folder = file_types::folder_name(&file_type);
     download_dir.push(format!("mxsend/{}/{}", sub_folder, safe_file_name));
-    
+
     let mut file = match File::create_new(&download_dir).await {
         Ok(f) => f,
         Err(_) => return Err(String::from("Failed to create file")),
@@ -168,7 +195,7 @@ pub fn run() {
             create_conn_server,
             disconnect_server,
             list_files,
-            get_file,
+            send_file,
             save_file
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))

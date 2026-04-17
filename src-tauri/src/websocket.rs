@@ -1,64 +1,47 @@
-use std::path::PathBuf;
-
-use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
-use axum::response::IntoResponse;
-use serde::{Serialize, Deserialize};
-
-pub async fn ws_handler(ws: WebSocketUpgrade)-> impl IntoResponse {
-    ws.on_upgrade(ws_fn)
-}
-
+use serde::{Deserialize, Serialize};
+use socketioxide::{
+    extract::{Data, SocketRef},
+    BroadcastError,
+};
 
 #[derive(Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase", content="payload")]
-enum Messages {
-    Progress {current: u64, total: u64, file_name: String, file_size: u64, file_type: String, sender_id: String},
-    Newfile(String),
-    NewConnection(String)
+struct Progress {
+    current: u64,
+    total: u64,
+    file_name: String,
+    file_size: u64,
+    file_type: String,
+    sender_id: String,
 }
 
-pub async  fn ws_fn(mut socket: WebSocket){
-    let welcome = Messages::NewConnection("New user".to_string());
-    let _ = socket.send(Message::Text(serde_json::to_string(&welcome).unwrap().into())).await;
-
-    while let Some(msg) = socket.recv().await {
-        if socket.send(Message::Text("Ping".into())).await.is_err() {
-            // client disconnected
-            return;
+fn handle_broadcast_events(res: Result<(), BroadcastError>) {
+    match res {
+        Ok(_) => (),
+        Err(err) => {
+            dbg!(err);
+            ()
         }
-        let message = match msg {
-            Ok(m)=>m,
-            Err(_)=>return
-        };
-        if let Message::Text(text) = message {
-            if let Ok(event) = serde_json::from_str::<Messages>(&text){
-                match event {
-                    Messages::Newfile(file)=> {
-                        let e = Messages::Newfile(file);
-                        let socket_res = socket.send(Message::Text(serde_json::to_string(&e).unwrap().into())).await;
-                        match socket_res {
-                            Ok(_)=>(),
-                            Err(_)=>()
-                        }
-                    },
-                    Messages::Progress { current, total, file_name, sender_id, file_size, file_type }=>{
-                        let e = Messages::Progress { current, total, file_name, sender_id, file_size, file_type };
-                        let socket_res = socket.send(Message::Text(serde_json::to_string(&e).unwrap().into())).await;
-                        match socket_res {
-                            Ok(_)=>(),
-                            Err(_)=>()
-                        }
-                    },
-                    Messages::NewConnection(_)=>{
-                        let e = Messages::NewConnection("New user".to_string());
-                        let socket_res = socket.send(Message::Text(serde_json::to_string(&e).unwrap().into())).await;
-                        match socket_res {
-                            Ok(_)=>(),
-                            Err(_)=>()
-                        }
-                    }
-                };
-            }
-        }  
     }
+}
+
+pub async fn handle_socket(socket: SocketRef) {
+    socket.on(
+        "progress",
+        async |socket: SocketRef, Data(data): Data<Progress>| {
+            handle_broadcast_events(socket.broadcast().emit("progress", &data).await);
+        },
+    );
+    socket.on(
+        "newConnection",
+        async |socket: SocketRef, Data(data): Data<String>| {
+            handle_broadcast_events(socket.broadcast().emit("newConnection", &data).await);
+        },
+    );
+    socket.on(
+        "newFile",
+        async |socket: SocketRef, Data(data): Data<String>| {
+            handle_broadcast_events(socket.broadcast().emit("newFile", &data).await);
+        },
+    );
+    ()
 }

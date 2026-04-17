@@ -41,7 +41,7 @@ const TransferTab = () => {
             .map(
               ({ file_name, file_path, file_size, type, current, total }) => {
                 return (
-                  <div className="relative w-full rounded-md">
+                  <div key={file_name + file_path} className="relative w-full rounded-md">
                     <TabListItem
                       fileName={file_name}
                       filePath={file_path}

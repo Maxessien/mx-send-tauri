@@ -1,20 +1,20 @@
 use std::path::{Path, PathBuf};
 
 use axum::{
-    body::{Body, Bytes},
+    body::Body,
     extract::{Json, Query, State},
-    http::{header, Response, StatusCode},
+    http::{Response, StatusCode, header},
     middleware::Next,
     response::IntoResponse,
 };
-use futures_util::lock::Mutex;
+use futures_util::{StreamExt, lock::Mutex};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::{
     fs::{metadata, File},
     io::AsyncWriteExt,
 };
-use tokio_util::io::ReaderStream;
+use tokio_util::io::{ReaderStream};
 use uuid::Uuid;
 
 use crate::axum::AllowedFileList;
@@ -51,7 +51,7 @@ pub enum FileType {
 #[derive(Deserialize)]
 pub struct UploadFileQuery {
     pub name: String,
-    pub size: u64,
+    // pub size: u64,
     pub file_type: FileType,
 }
 
@@ -100,7 +100,7 @@ pub async fn verify_session_id(
 pub async fn upload_file(
     State(app): State<AppHandle>,
     Query(query): Query<UploadFileQuery>,
-    body: Bytes,
+    body: Body,
 ) -> StatusCode {
     let mut download_dir = match app.path().download_dir() {
         Ok(dir) => dir,
@@ -129,11 +129,19 @@ pub async fn upload_file(
         Ok(f) => f,
         Err(_) => return StatusCode::CONFLICT,
     };
+    
+    let mut body_stream: axum::body::BodyDataStream = body.into_data_stream();
+    while let Some(chunk) = body_stream.next().await {
+        if let Ok(bytes) = chunk {
+            let _ = file.write_all(&bytes).await;
+        } 
+    };
 
-    match file.write_all(&body).await {
-        Ok(_) => StatusCode::OK,
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    if let Err(_) = file.flush().await {
+        return StatusCode::INTERNAL_SERVER_ERROR;
     }
+
+    StatusCode::OK
 }
 
 pub async fn add_to_filelist(

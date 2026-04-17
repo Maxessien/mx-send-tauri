@@ -79,12 +79,8 @@ const useReceiver = () => {
         const fileInfo = constructFileInfo(xml)
         if (e.lengthComputable) {
           if (socket.current && fileInfo)
-            socket.current.send(
-              JSON.stringify({
-                type: "Progress",
-                payload: { ...fileInfo, total: e.total, current: e.loaded },
-              }),
-            );
+            socket.current.emit("progress", { ...fileInfo, total: e.total, current: e.loaded, sender_id: appSession })
+            dispatch(updateTransferProgress({ ...fileInfo, total: e.total, current: e.loaded, sender_id: appSession }))
         }
       };
       xml.onload = async () => {

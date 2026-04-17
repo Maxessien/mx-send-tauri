@@ -8,6 +8,7 @@ const TabFilesWrapper = ({ files }: { files: FileRes[] }) => {
         {files.length > 0 ? files.map(({ file_name, file_path, file_size, type }) => {
           return (
             <TabListItem
+              key={file_name + file_path}
               fileName={file_name}
               filePath={file_path}
               fileSize={file_size}
