@@ -1,17 +1,19 @@
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { JSX, useEffect, useState } from "react";
-import AppHeader from "./AppHeader";
-import AppNavItem from "./AppNavItem";
 import { FaImage, FaMusic, FaVideo } from "react-icons/fa";
 import { FiLoader } from "react-icons/fi";
-import useWebsocket from "../../hooks/useWebsocket";
-import ActionBtns from "./ActionBtns";
-import QrCodeDisplay from "./QrCodeDisplay";
-import { invoke } from "@tauri-apps/api/core";
 import { useDispatch, useSelector } from "react-redux";
-import { setConnection } from "../../store-slices/connectionSlice";
-import QrScanner from "./QrScanner";
 import { useReceiver } from "../../hooks/useGetFiles";
+import useWebsocket from "../../hooks/useWebsocket";
 import { RootState } from "../../store";
+import { updateTransferProgress } from "../../store-slices/allFilesSlice";
+import { setConnection } from "../../store-slices/connectionSlice";
+import ActionBtns from "./ActionBtns";
+import AppHeader from "./AppHeader";
+import AppNavItem from "./AppNavItem";
+import QrCodeDisplay from "./QrCodeDisplay";
+import QrScanner from "./QrScanner";
 
 export interface ScannerState {
   active: boolean;
@@ -49,22 +51,36 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
   //Call websocket hook to initiate use effect that initiates socket globally when isConnected is true
   const { socket } = useWebsocket();
   const { downloadVideo } = useReceiver();
-  const { connectionInfo, isConnected, role } = useSelector(
-    (state: RootState) => state.connection,
+  const { connectionInfo, isConnected, role, appSessionId } = useSelector(
+    (state: RootState) => ({...state.connection, appSessionId: state.appSession}),
   );
 
   useEffect(() => {
+    let unlistenTauri: () => void;
+
     if (isConnected && role === "receiver") {
       socket.current?.emit("newConnection", connectionInfo.session_id);
-      if (socket.current)
+      if (socket.current) {
         socket.current.on("newFile", (data: string) => {
           downloadVideo(data);
         });
+      }
+
+      listen<any>("download_progress", (event) => {
+        const fileInfo = event.payload;
+        if (socket.current) {
+          socket.current.emit("progress", { ...fileInfo, sender_id: appSessionId });
+        }
+        dispatch(updateTransferProgress({ ...fileInfo, sender_id: appSessionId }));
+      }).then((unlisten) => {
+        unlistenTauri = unlisten;
+      });
     }
 
     return () => {
-      socket.current?.off("newFile")
-    }
+      socket.current?.off("newFile");
+      if (unlistenTauri) unlistenTauri();
+    };
   }, [isConnected, role]);
 
   return (

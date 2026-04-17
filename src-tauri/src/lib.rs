@@ -152,6 +152,98 @@ async fn send_file(file_path: PathBuf, url: String, session_id: String, app: tau
     }
 }
 
+#[derive(Serialize, Clone)]
+struct DownloadProgressPayload {
+    file_name: String,
+    file_path: String,
+    file_size: u64,
+    #[serde(rename = "type")]
+    file_type_str: String,
+    total: u64,
+    current: u64,
+}
+
+#[tauri::command]
+async fn download_file_from_sender(url: String, session_id: String, app_handle: tauri::AppHandle) -> Result<String, String> {
+    let mut headers = header::HeaderMap::new();
+    let sess_id = format!("Bearer {}", session_id);
+    let header_val = match header::HeaderValue::from_str(&sess_id) {
+        Ok(val) => val,
+        Err(_) => return Err("Couldn't set header".to_string()),
+    };
+    headers.insert(header::AUTHORIZATION, header_val);
+
+    let client = reqwest::ClientBuilder::new().default_headers(headers).build().unwrap();
+    let mut res = client.get(&url).send().await.map_err(|e| e.to_string())?;
+
+    if !res.status().is_success() {
+        return Err(format!("Download failed with status: {}", res.status()));
+    }
+
+    let file_name = res.headers().get("file_name").and_then(|h| h.to_str().ok()).unwrap_or("unknown").to_string();
+    let file_size: u64 = res.headers().get("file_size").and_then(|h| h.to_str().ok()).unwrap_or("0").parse().unwrap_or(0);
+    let file_path = res.headers().get("file_path").and_then(|h| h.to_str().ok()).unwrap_or("").to_string();
+    let file_type_str = res.headers().get("file_type").and_then(|h| h.to_str().ok()).unwrap_or("document").to_string();
+    
+    let file_type = match file_type_str.as_str() {
+        "audio" => handler::FileType::Audio,
+        "video" => handler::FileType::Video,
+        "image" => handler::FileType::Image,
+        _ => handler::FileType::Document,
+    };
+
+    let mut download_dir = match app_handle.path().download_dir() {
+        Ok(dir) => dir,
+        Err(_) => return Err(String::from("Failed to get app folder")),
+    };
+    
+    let sub_folder = file_types::folder_name(&file_type);
+    let safe_file_name = Path::new(&file_name).file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
+    
+    download_dir.push(format!("mxsend/{}", sub_folder));
+    if tokio::fs::create_dir_all(&download_dir).await.is_err() {
+        return Err("Failed to create download dir".to_string());
+    }
+    
+    download_dir.push(safe_file_name);
+
+    let mut file = match File::create_new(&download_dir).await {
+        Ok(f) => f,
+        Err(_) => return Err(String::from("Failed to create file, it might already exist")),
+    };
+
+    let mut current = 0;
+    while let Some(chunk) = res.chunk().await.map_err(|e| e.to_string())? {
+        if file.write_all(&chunk).await.is_err() {
+            return Err("Failed to write to file".to_string());
+        }
+        current += chunk.len() as u64;
+        
+        // Use a generic throttle or just emit (Tauri IPC is fast, but sending too many events can queue up.
+        // It's generally okay for this scope).
+        let _ = app_handle.emit("download_progress", DownloadProgressPayload {
+            file_name: file_name.clone(),
+            file_path: file_path.clone(),
+            file_size,
+            file_type_str: file_type_str.clone(),
+            total: file_size,
+            current,
+        });
+    }
+    
+    // Final completion event
+    let _ = app_handle.emit("download_progress", DownloadProgressPayload {
+        file_name: file_name.clone(),
+        file_path: file_path.clone(),
+        file_size,
+        file_type_str: file_type_str.clone(),
+        total: file_size,
+        current: file_size,
+    });
+
+    Ok("Downloaded".to_string())
+}
+
 #[tauri::command]
 async fn save_file(
     app_handle: tauri::AppHandle,
@@ -196,7 +288,8 @@ pub fn run() {
             disconnect_server,
             list_files,
             send_file,
-            save_file
+            save_file,
+            download_file_from_sender
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(SessionId(Uuid::new_v4())))
