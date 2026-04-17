@@ -17,7 +17,7 @@ use tokio::{
 use tokio_util::io::{ReaderStream};
 use uuid::Uuid;
 
-use crate::axum::AllowedFileList;
+use crate::{axum::AllowedFileList, file_types};
 use crate::file_types::folder_name;
 use crate::SessionId;
 
@@ -124,6 +124,11 @@ pub async fn upload_file(
             return StatusCode::INTERNAL_SERVER_ERROR;
         }
     }
+
+    download_dir = match file_types::handle_duplicate_path(download_dir) {
+        Ok(path)=>path,
+        Err(_)=>return StatusCode::INTERNAL_SERVER_ERROR
+    };
 
     let mut file = match File::create_new(&download_dir).await {
         Ok(f) => f,

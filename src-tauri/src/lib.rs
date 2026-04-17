@@ -207,6 +207,11 @@ async fn download_file_from_sender(url: String, session_id: String, app_handle: 
     
     download_dir.push(safe_file_name);
 
+    download_dir = match file_types::handle_duplicate_path(download_dir) {
+        Ok(path)=>path,
+        Err(_)=> return Err(String::from("Couldn't allocate file name"))
+    };
+
     let mut file = match File::create_new(&download_dir).await {
         Ok(f) => f,
         Err(_) => return Err(String::from("Failed to create file, it might already exist")),
@@ -267,6 +272,11 @@ async fn save_file(
 
     let sub_folder = file_types::folder_name(&file_type);
     download_dir.push(format!("mxsend/{}/{}", sub_folder, safe_file_name));
+
+    download_dir = match file_types::handle_duplicate_path(download_dir) {
+        Ok(path)=>path,
+        Err(_)=>return Err("Couldn't allocate file name".to_string())
+    };
 
     let mut file = match File::create_new(&download_dir).await {
         Ok(f) => f,
