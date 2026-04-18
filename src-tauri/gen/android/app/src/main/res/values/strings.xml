@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">mx-send-tauri</string>
-    <string name="main_activity_title">mx-send-tauri</string>
+    <string name="app_name">MxSend</string>
+    <string name="main_activity_title">MxSend</string>
 </resources>

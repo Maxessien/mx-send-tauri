@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "mx-send-tauri",
+  "productName": "MxSend",
   "version": "0.1.0",
-  "identifier": "com.max-essien.mx-send-tauri",
+  "identifier": "com.max-essien.MxSend",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,8 +12,8 @@
   "app": {
     "windows": [
       {
-        "title": "mx-send-tauri",
-        "width": 800,
+        "title": "MxSend",
+        "width": 1024,
         "height": 600
       }
     ],

@@ -1,4 +1,4 @@
-package com.max_essien.mx_send_tauri
+package com.max_essien.MxSend
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

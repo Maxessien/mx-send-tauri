@@ -2506,7 +2506,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mx-send-tauri"
+name = "mxsend"
 version = "0.1.0"
 dependencies = [
  "async-stream",
