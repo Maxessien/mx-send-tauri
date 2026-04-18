@@ -2519,6 +2519,7 @@ dependencies = [
  "socketioxide",
  "tauri",
  "tauri-build",
+ "tauri-plugin-android-external-storage",
  "tauri-plugin-opener",
  "tokio",
  "tokio-tungstenite 0.21.0",
@@ -4522,6 +4523,18 @@ dependencies = [
  "tauri-utils",
  "toml 0.9.12+spec-1.1.0",
  "walkdir",
+]
+
+[[package]]
+name = "tauri-plugin-android-external-storage"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2a3b1b98563a6d285e52fadd559071bc77573c0250c66a71edb3809e26179c9"
+dependencies = [
+ "serde",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

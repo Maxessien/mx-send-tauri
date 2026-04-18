@@ -19,7 +19,7 @@ use uuid::Uuid;
 
 use crate::{axum::AllowedFileList, file_types};
 use crate::file_types::folder_name;
-use crate::SessionId;
+use crate::commands::SessionId;
 
 type HttpRequest = axum::http::Request<Body>;
 
