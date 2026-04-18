@@ -13,9 +13,10 @@ const QrCodeDisplay = ({
       <HiX onClick={stopServer} className="text-xl fixed top-15 right-13" />
       <QrCode
         size={256}
-        style={{ height: "auto", maxWidth: "50%", width: "100%" }}
+        style={{ height: "auto", maxWidth: "560px" }}
         value={qrcodeVal}
         viewBox={`0 0 256 256`}
+        className="sm:w-1/2 w-4/5"
       />
     </div>
   );

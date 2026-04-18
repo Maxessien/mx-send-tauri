@@ -52,7 +52,10 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
   const { socket } = useWebsocket();
   const { downloadVideo } = useReceiver();
   const { connectionInfo, isConnected, role, appSessionId } = useSelector(
-    (state: RootState) => ({...state.connection, appSessionId: state.appSession}),
+    (state: RootState) => ({
+      ...state.connection,
+      appSessionId: state.appSession,
+    }),
   );
 
   useEffect(() => {
@@ -69,9 +72,14 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
       listen<any>("download_progress", (event) => {
         const fileInfo = event.payload;
         if (socket.current) {
-          socket.current.emit("progress", { ...fileInfo, sender_id: appSessionId });
+          socket.current.emit("progress", {
+            ...fileInfo,
+            sender_id: appSessionId,
+          });
         }
-        dispatch(updateTransferProgress({ ...fileInfo, sender_id: appSessionId }));
+        dispatch(
+          updateTransferProgress({ ...fileInfo, sender_id: appSessionId }),
+        );
       }).then((unlisten) => {
         unlistenTauri = unlisten;
       });
@@ -86,10 +94,12 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
   return (
     <div className="w-screen flex flex-col h-screen min-h-150">
       <AppHeader />
-      <QrScanner
-        closeScanner={() => setShowScanner({ active: false, codeVal: "" })}
-      />
-      <main className="w-full flex-1 grid grid-cols-[25%_75%]">
+      {showScanner.active && (
+        <QrScanner
+          closeScanner={() => setShowScanner({ active: false, codeVal: "" })}
+        />
+      )}
+      <main className="w-full h-[calc(100vh-68px)] md:grid md:grid-cols-[25%_75%]">
         {showQrCode.active && (
           <QrCodeDisplay
             stopServer={stopServer}
@@ -97,12 +107,14 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           />
         )}
         <aside className="md:h-full w-full z-15 fixed md:sticky flex flex-col gap-2 items-center justify-center bottom-3 left-0">
-          <ActionBtns
-            openScanner={() => setShowScanner({ active: true, codeVal: "" })}
-            setQrCode={(state) => setShowQrCode(state)}
-            showQrCode={showQrCode}
-            showScanner={showScanner}
-          />
+          <div className="md:hidden">
+            <ActionBtns
+              openScanner={() => setShowScanner({ active: true, codeVal: "" })}
+              setQrCode={(state) => setShowQrCode(state)}
+              showQrCode={showQrCode}
+              showScanner={showScanner}
+            />
+          </div>
           <nav className="space-y-3 md:h-full md:w-full w-[90%] mx-auto px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2">
             <AppNavItem active="audio" icon={<FaMusic />} title="Audio" />
             <AppNavItem active="video" icon={<FaVideo />} title="Video" />
@@ -115,6 +127,14 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
             />
           </nav>
         </aside>
+        <div className="hidden fixed bottom-4 w-[73vw] z-99 right-[25vw] translate-x-[23vw] md:block">
+          <ActionBtns
+            openScanner={() => setShowScanner({ active: true, codeVal: "" })}
+            setQrCode={(state) => setShowQrCode(state)}
+            showQrCode={showQrCode}
+            showScanner={showScanner}
+          />
+        </div>
         <section className="w-full px-3 py-5 h-full overflow-auto">
           {children}
         </section>

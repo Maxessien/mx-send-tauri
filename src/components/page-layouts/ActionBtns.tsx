@@ -1,11 +1,11 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useDispatch, useSelector } from "react-redux";
+import useSendFiles from "../../hooks/useSendFiles";
 import { RootState } from "../../store";
+import { setConnection } from "../../store-slices/connectionSlice";
+import { ConnectionInfo } from "../../types";
 import Button from "../reusable-components/Button";
 import { ScannerState } from "./AppWrapper";
-import useSendFiles from "../../hooks/useSendFiles";
-import { invoke } from "@tauri-apps/api/core";
-import { ConnectionInfo } from "../../types";
-import { setConnection } from "../../store-slices/connectionSlice";
 
 const ActionBtns = ({
   showQrCode,
@@ -53,7 +53,7 @@ const ActionBtns = ({
   };
 
   return (
-    <div className="md:hidden flex w-full gap-2 px-3 items-center">
+    <div className="flex w-full gap-2 px-3 items-center">
       {isConnected ? (
         <Button attrs={{ onClick: sendSelected }} width="w-full">
           Send {selected.length > 0 && ` ${selected.length}`}
