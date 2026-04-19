@@ -1,17 +1,14 @@
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../store";
-import { setConnection } from "../store-slices/connectionSlice";
-import { updateTransferProgress } from "../store-slices/allFilesSlice";
-import { Transfer } from "../types";
 import { io, Socket } from "socket.io-client";
+import { RootState } from "../store";
+import { updateTransferProgress } from "../store-slices/allFilesSlice";
+import { setConnection } from "../store-slices/connectionSlice";
+import { Transfer } from "../types";
 
 const useWebsocket = () => {
   const { connectionInfo, isConnected, role, count } = useSelector(
-    (state: RootState) => ({
-      ...state.connection,
-      ...state.allFiles,
-    }),
+    (state: RootState) => state.connection,
   );
   const socket = useRef<Socket | null>(null);
   const dispatch = useDispatch();
@@ -21,8 +18,11 @@ const useWebsocket = () => {
       socket.current = null;
     }
     if (isConnected || role === "sender") {
-      const url = `http://${connectionInfo.ip_address}:${connectionInfo.port}/ws?session=${connectionInfo.session_id}`;
-      socket.current = io(url);
+      const url = `http://${connectionInfo.ip_address}:${connectionInfo.port}`;
+      socket.current = io(url, {
+        path: "/ws",
+        query: { session: connectionInfo.session_id },
+      });
       socket.current.on("connect", () => console.log("Socket connected"));
       socket.current.on("disconnect", (reason, desc) =>
         console.log("Socket disconnected", { reason, desc }),

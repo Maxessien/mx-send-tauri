@@ -71,10 +71,12 @@ pub async fn create_server(app_handle: AppHandle) -> String {
                 .route("/upload", post(handler::add_to_filelist))
                 .route("/download", get(handler::download_from_filelist))
                 .route("/receiver/upload", post(handler::upload_file))
-                .route_layer(ServiceBuilder::new().layer(cors).layer(
-                    middleware::from_fn_with_state(app_handle.clone(), handler::verify_session_id),
+                .route_layer(middleware::from_fn_with_state(
+                    app_handle.clone(),
+                    handler::verify_session_id,
                 ))
                 .layer(layer)
+                .layer(cors)
                 .with_state(app_handle);
         axum::serve(listener, app)
             .with_graceful_shutdown(async move {
