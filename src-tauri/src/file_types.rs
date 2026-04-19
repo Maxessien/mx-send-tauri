@@ -86,14 +86,12 @@ pub fn handle_duplicate_path(path: PathBuf) -> Result<PathBuf, String> {
     let parent = path.parent().unwrap_or(Path::new(""));
 
     for i in 1..20 {
-        // Construct a safe filename, e.g., "movie(1).mp4" or "movie(1)"
         let new_file_name = if ext.is_empty() {
             format!("{}({})", stem, i)
         } else {
             format!("{}({}).{}", stem, i, ext)
         };
 
-        // Combine the parent directory with the newly formatted file name
         let new_path = parent.join(new_file_name);
         
         if !new_path.exists() {

@@ -2507,6 +2507,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-android-external-storage",
  "tauri-plugin-opener",
+ "tauri-plugin-safe-area-insets",
  "tokio",
  "tokio-tungstenite 0.21.0",
  "tokio-util",
@@ -4497,6 +4498,18 @@ dependencies = [
  "url",
  "windows",
  "zbus",
+]
+
+[[package]]
+name = "tauri-plugin-safe-area-insets"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "653b425316a0e9563995286eb5b0fa44490583486b7a0925859b33ec5be07f0e"
+dependencies = [
+ "serde",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

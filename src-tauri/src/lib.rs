@@ -15,7 +15,8 @@ pub(crate) mod websocket;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_android_external_storage::init())
+        // .plugin(tauri_plugin_android_external_storage::init())
+        // .plugin(tauri_plugin_safe_area_insets::)
         .invoke_handler(tauri::generate_handler![
             commands::create_conn_server,
             commands::disconnect_server,

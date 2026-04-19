@@ -22,4 +22,6 @@ body{
   height: 100vh;
   min-height: 540px;
   overflow-x: hidden;
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: var(--safe-area-inset-bottom);
 }

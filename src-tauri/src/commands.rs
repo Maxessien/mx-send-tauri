@@ -62,18 +62,37 @@ pub struct FileRes {
     pub file_path: PathBuf,
 }
 
+#[cfg(target_os = "android")]
+fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 5] {
+    let dirs = [
+        PathBuf::from("/storage/emulated/0/Download"),
+        PathBuf::from("/storage/emulated/0/Movies"),
+        PathBuf::from("/storage/emulated/0/Pictures"),
+        PathBuf::from("/storage/emulated/0/Music"),
+        PathBuf::from("/storage/emulated/0/Documents"),
+    ];
+    dirs
+}
+
+#[cfg(not(target_os = "android"))]
+fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 5] {
+    let dirs = [
+        app.path().download_dir().unwrap(),
+        app.path().video_dir().unwrap(),
+        app.path().picture_dir().unwrap(),
+        app.path().audio_dir().unwrap(),
+        app.path().document_dir().unwrap(),
+    ];
+    dirs
+}
+
 #[tauri::command]
 pub async fn list_files(
     app_handle: tauri::AppHandle,
     file_type: handler::FileType,
 ) -> Result<Vec<FileRes>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let dirs = [
-            app_handle.path().download_dir().unwrap(),
-            app_handle.path().video_dir().unwrap(),
-            app_handle.path().picture_dir().unwrap(),
-            app_handle.path().audio_dir().unwrap(),
-        ];
+        let dirs = get_dirs(&app_handle);
         let mut files: Vec<FileRes> = Vec::new();
         for dir in dirs {
             let walker = WalkDir::new(dir);
@@ -299,18 +318,20 @@ pub async fn save_file(
         Ok(dir) => dir,
         Err(_) => return Err(String::from("Failed to get app folder")),
     };
-    if let Some(parent) = download_dir.parent() {
-        if let Err(_) = tokio::fs::create_dir_all(parent).await {
-            return Err(String::from("Failed to create parent dir"));
-        }
+
+    let sub_folder = file_types::folder_name(&file_type);
+    download_dir.push(format!("mxsend/{}", sub_folder));
+
+    if let Err(_) = tokio::fs::create_dir_all(&download_dir).await {
+        return Err(String::from("Failed to create parent dir"));
     }
+
     let safe_file_name = Path::new(&file_name)
         .file_name()
         .and_then(|n| n.to_str())
         .ok_or_else(|| String::from("Invalid file name"))?;
 
-    let sub_folder = file_types::folder_name(&file_type);
-    download_dir.push(format!("mxsend/{}/{}", sub_folder, safe_file_name));
+    download_dir.push(safe_file_name);
 
     download_dir = match file_types::handle_duplicate_path(download_dir) {
         Ok(path) => path,
@@ -343,7 +364,7 @@ pub async fn req_file_access(app: tauri::AppHandle) -> Result<String, String> {
             Ok(acc) => acc,
             Err(_) => {
                 app.exit(0);
-                return Err("Failed to check access".to_string());
+                return Err("Failed to request access".to_string());
             }
         };
         if !access_req.is_granted {

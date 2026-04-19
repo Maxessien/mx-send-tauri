@@ -117,13 +117,13 @@ pub async fn upload_file(
         None => return StatusCode::NOT_ACCEPTABLE,
     };
 
-    download_dir.push(format!("mxsend/{}/{}", sub_folder, safe_name));
+    download_dir.push(format!("mxsend/{}", sub_folder));
 
-    if let Some(parent) = download_dir.parent() {
-        if let Err(_) = tokio::fs::create_dir_all(parent).await {
-            return StatusCode::INTERNAL_SERVER_ERROR;
-        }
+    if let Err(_) = tokio::fs::create_dir_all(&download_dir).await {
+        return StatusCode::INTERNAL_SERVER_ERROR;
     }
+
+    download_dir.push(safe_name);
 
     download_dir = match file_types::handle_duplicate_path(download_dir) {
         Ok(path)=>path,

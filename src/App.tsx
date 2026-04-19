@@ -23,6 +23,7 @@ const App = () => {
     <BrowserRouter>
       <AppWrapper>
         <Routes>
+          <Route path="/" element={<AudioTab />} />
           <Route path="/audio" element={<AudioTab />} />
           <Route path="/document" element={<DocumentTab />} />
           <Route path="/video" element={<VideoTab />} />

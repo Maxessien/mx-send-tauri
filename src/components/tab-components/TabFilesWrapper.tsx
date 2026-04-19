@@ -1,4 +1,5 @@
 import { FileRes } from "../../types";
+import { FILE_PREVIEW_IMAGES } from "../../utils/file-utils";
 import TabListItem from "./TabListItem";
 
 const TabFilesWrapper = ({ files }: { files: FileRes[] }) => {
@@ -13,6 +14,7 @@ const TabFilesWrapper = ({ files }: { files: FileRes[] }) => {
               filePath={file_path}
               fileSize={file_size}
               type={type}
+              previewImgUrl={FILE_PREVIEW_IMAGES?.[type] || undefined}
             />
           );
         }) : <p className="w-full text-center font-semibold text-2xl py-4">No Files found</p>}
