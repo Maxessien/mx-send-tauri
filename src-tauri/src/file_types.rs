@@ -58,22 +58,22 @@ pub fn matches_file_type(file_type: &FileType, entry: &DirEntry) -> bool {
     entry.path().is_file() && extensions.contains(&entry_ext.as_str())
 }
 
-pub fn matches_path(file_type: &FileType, path: &Path) -> bool {
-    let extensions = match extensions_for(file_type) {
-        Some(extensions) => extensions,
-        None => return false,
-    };
+// pub fn matches_path(file_type: &FileType, path: &Path) -> bool {
+//     let extensions = match extensions_for(file_type) {
+//         Some(extensions) => extensions,
+//         None => return false,
+//     };
 
-    let entry_ext = match path.extension() {
-        Some(val) => match val.to_str() {
-            Some(ext) => ext.to_lowercase(),
-            None => return false,
-        },
-        None => return false,
-    };
+//     let entry_ext = match path.extension() {
+//         Some(val) => match val.to_str() {
+//             Some(ext) => ext.to_lowercase(),
+//             None => return false,
+//         },
+//         None => return false,
+//     };
 
-    path.is_file() && extensions.contains(&entry_ext.as_str())
-}
+//     path.is_file() && extensions.contains(&entry_ext.as_str())
+// }
 
 pub fn handle_duplicate_path(path: PathBuf) -> Result<PathBuf, String> {
     if !path.exists() {

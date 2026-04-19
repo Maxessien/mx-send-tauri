@@ -6,6 +6,7 @@ import { setConnection } from "../../store-slices/connectionSlice";
 import { ConnectionInfo } from "../../types";
 import Button from "../reusable-components/Button";
 import { ScannerState } from "./AppWrapper";
+import { useState } from "react";
 
 const ActionBtns = ({
   showQrCode,
@@ -20,17 +21,25 @@ const ActionBtns = ({
 }) => {
   const isConnected = useSelector((state: RootState) => state.connection.isConnected);
   const selected = useSelector((state: RootState) => state.allFiles.selected);
+  const [sending, setSending] = useState(false)
 
   const dispatch = useDispatch();
 
   const { sendFile } = useSendFiles();
 
   const sendSelected = async () => {
-    await Promise.all(
+    try {
+      setSending(true)
+      await Promise.all(
       selected.map((file) => {
         sendFile(file, file.type);
       }),
     );
+    } catch (err) {
+      console.log(err)
+    }finally{
+      setSending(false)
+    }
   };
 
   const startServer = async () => {
@@ -53,13 +62,13 @@ const ActionBtns = ({
   return (
     <div className="flex w-full gap-2 px-3 items-center">
       {isConnected ? (
-        <Button attrs={{ onClick: sendSelected }} width="w-full">
+        <Button attrs={{ onClick: sendSelected , disabled: sending }} width="w-full">
           Send {selected.length > 0 && ` ${selected.length}`}
         </Button>
       ) : (
         <>
           <Button
-            attrs={{ onClick: startServer, disabled: showScanner.active }}
+            attrs={{ onClick: startServer, disabled: showScanner.active || showQrCode.active }}
             className="flex-1"
             width=""
           >
@@ -67,7 +76,7 @@ const ActionBtns = ({
           </Button>
           <Button
             attrs={{
-              disabled: showQrCode.active,
+              disabled: showQrCode.active || showScanner.active,
               onClick: openScanner,
             }}
             className="flex-1"

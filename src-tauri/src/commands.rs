@@ -274,8 +274,6 @@ pub async fn download_file_from_sender(
         }
         current += chunk.len() as u64;
 
-        // Use a generic throttle or just emit (Tauri IPC is fast, but sending too many events can queue up.
-        // It's generally okay for this scope).
         let _ = app_handle.emit(
             "download_progress",
             DownloadProgressPayload {
