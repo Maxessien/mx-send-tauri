@@ -10,9 +10,7 @@ import { getRustFileType } from "../utils/file-utils";
 
 const useGetFiles = (fileType: FileResType, queryOptions?: UndefinedInitialDataOptions<FileRes[], Error, FileRes[], ActiveTab[]>) => {
   const dispatch = useDispatch();
-  const { transferring } = useSelector((state: RootState) => ({
-    ...state.allFiles
-  }));
+  const transferring = useSelector((state: RootState) => state.allFiles.transferring);
 
   const getFiles = async (type: FileResType) => {
     const rustEnum = getRustFileType(type);
@@ -21,10 +19,11 @@ const useGetFiles = (fileType: FileResType, queryOptions?: UndefinedInitialDataO
       const files = await invoke<FileRes[]>("list_files", {
         fileType: rustEnum,
       });
+      const filesWithTypes = files.map((file) => ({ ...file, type }))
       dispatch(
-        addManyFiles({ type, info: files.map((file) => ({ ...file, type })) }),
+        addManyFiles({ type, info: filesWithTypes }),
       );
-      return files;
+      return filesWithTypes;
     } catch (err) {
       console.log(err);
       throw err;

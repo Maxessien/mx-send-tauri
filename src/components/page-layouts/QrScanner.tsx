@@ -1,18 +1,19 @@
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 import { useEffect } from "react";
 import { HiX } from "react-icons/hi";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../store";
 import { setConnection } from "../../store-slices/connectionSlice";
 import { ConnectionInfo } from "../../types";
 
-const scannerConfig = {
-  fps: 10,
-  qrbox: { width: 100, height: 100 },
-  rememberLastUsedCamera: true,
+
+const getWidth = (width: number) => {
+  return Math.min(300, Math.floor(width * 0.75));
 };
 
 const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
   const dispatch = useDispatch();
+  const { width } = useSelector((state: RootState) => state.windowSize);
 
   const handleScanSuccess = (res: string) => {
     try {
@@ -25,7 +26,7 @@ const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
           role: "receiver",
         }),
       );
-      closeScanner()
+      closeScanner();
     } catch (err) {
       console.log(err);
       dispatch(
@@ -40,23 +41,46 @@ const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
   };
 
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner("reader", scannerConfig, false);
-    scanner.render(handleScanSuccess, (err) => {
-      console.log(err);
-    });
+    let isMounted = true;
+    const scanner = new Html5Qrcode("reader");
+
+    const initScanner = async () => {
+      try {
+        const boxSize = getWidth(width);
+        const config = {
+          fps: 10,
+          qrbox: { width: boxSize, height: boxSize },
+          rememberLastUsedCamera: true,
+        };
+        const camera = await Html5Qrcode.getCameras();
+        if (!isMounted) return;
+        
+        const backCamera = camera.find(({ label }) => label.toLowerCase().includes("back"));
+        const id = backCamera ? backCamera.id : camera?.[0].id;
+        
+        await scanner.start(id, config, handleScanSuccess, (err) => console.log(err));
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    initScanner();
 
     return () => {
-      scanner.clear();
+      isMounted = false;
+      if (scanner.isScanning) {
+        scanner.stop().catch(console.log);
+      }
     };
   }, []);
 
   return (
-    <div className="backdrop-blur-lg bg-[rgb(255,255,255,0.3)] relative">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center w-full h-full backdrop-blur-lg bg-[rgb(255,255,255,0.3)]">
       <HiX
         onClick={closeScanner}
-        className="text-2xl z-9999 absolute top-3 right-6"
+        className="text-4xl cursor-pointer absolute top-6 right-6 z-10000"
       />
-      <div id="reader"></div>
+      <div id="reader" className="w-full max-w-100"></div>
     </div>
   );
 };

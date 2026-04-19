@@ -12,7 +12,7 @@ const TabLoader = ({
     <div>
       {isLoading ? (
         <div className="w-full h-full flex justify-center items-center">
-          <LoadRoller strokeWidth={10} containerClassName="w-[80px] h-[80px]" />
+          <div className="w-full aspect-square max-w-30"><LoadRoller strokeWidth={10} /></div>
         </div>
       ) : (
         children

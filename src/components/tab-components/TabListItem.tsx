@@ -1,12 +1,12 @@
 import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "../../store"
 import { addSelected, removeSelected } from "../../store-slices/allFilesSlice"
-import { FILE_PREVIEW_IMAGES, formatFileSize } from "../../utils/file-utils"
 import { TabListItemProps } from "../../types"
+import { FILE_PREVIEW_IMAGES, formatFileSize } from "../../utils/file-utils"
 
 
 const TabListItem = ({ fileName, filePath, fileSize, previewImgUrl, type }: TabListItemProps) => {
-  const {selected} = useSelector((state: RootState)=>({...state.allFiles}))
+  const selected = useSelector((state: RootState) => state.allFiles.selected);
   const dispatch = useDispatch()
 
   const handleSelection = ()=>{
@@ -14,6 +14,8 @@ const TabListItem = ({ fileName, filePath, fileSize, previewImgUrl, type }: TabL
     const isSelected = selected.find(({file_name, file_path})=> fileName === file_name && filePath === file_path)
     isSelected ? dispatch(removeSelected(fileRes)) : dispatch(addSelected(fileRes))
   }
+
+  // console.log(type, FILE_PREVIEW_IMAGES)
 
   return (
     <>

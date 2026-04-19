@@ -1,13 +1,11 @@
-import { useSelector } from "react-redux";
-import TabListItem from "./TabListItem";
-import { RootState } from "../../store";
 import { useState } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store";
+import TabListItem from "./TabListItem";
 
 const TransferTab = () => {
-  const { transferring, appSessionId } = useSelector((state: RootState) => ({
-    ...state.allFiles,
-    appSessionId: state.appSession,
-  }));
+  const transferring = useSelector((state: RootState) => state.allFiles.transferring);
+  const appSessionId = useSelector((state: RootState) => state.appSession);
   const [activeTransferTab, setActiveTransferTab] = useState<
     "sending" | "receiving"
   >("receiving");

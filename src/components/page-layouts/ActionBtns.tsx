@@ -18,10 +18,8 @@ const ActionBtns = ({
   openScanner: () => void;
   setQrCode: (state: ScannerState) => void;
 }) => {
-  const { isConnected, selected } = useSelector((state: RootState) => ({
-    ...state.connection,
-    ...state.allFiles,
-  }));
+  const isConnected = useSelector((state: RootState) => state.connection.isConnected);
+  const selected = useSelector((state: RootState) => state.allFiles.selected);
 
   const dispatch = useDispatch();
 

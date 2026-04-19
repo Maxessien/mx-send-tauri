@@ -1,9 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { JSX, useEffect, useState } from "react";
-import { FaImage, FaMusic, FaVideo } from "react-icons/fa";
+import { FaFile, FaImage, FaMusic, FaVideo } from "react-icons/fa";
 import { FiLoader } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router";
 import { useReceiver } from "../../hooks/useGetFiles";
 import useWebsocket from "../../hooks/useWebsocket";
 import { RootState } from "../../store";
@@ -91,6 +92,8 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     };
   }, [isConnected, role]);
 
+  const location = useLocation()
+
   return (
     <div className="w-screen flex flex-col h-screen min-h-150">
       <AppHeader />
@@ -107,7 +110,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           />
         )}
         <aside className="md:h-full w-full z-15 fixed md:sticky flex flex-col gap-2 items-center justify-center bottom-3 left-0">
-          <div className="md:hidden">
+          <div className="md:hidden w-full">
             <ActionBtns
               openScanner={() => setShowScanner({ active: true, codeVal: "" })}
               setQrCode={(state) => setShowQrCode(state)}
@@ -115,17 +118,17 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
               showScanner={showScanner}
             />
           </div>
-          <nav className="space-y-3 md:h-full md:w-full w-[90%] mx-auto px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2">
-            <AppNavItem active="audio" icon={<FaMusic />} title="Audio" />
-            <AppNavItem active="video" icon={<FaVideo />} title="Video" />
-            <AppNavItem active="image" icon={<FaImage />} title="Image" />
-            <AppNavItem active="document" icon={<FaMusic />} title="Document" />
+          <ul className="space-y-3 md:h-full md:w-full w-[90%] mx-auto px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2">
+            <AppNavItem location="/audio" active={location.pathname.trim()=== "/audio" || location.pathname.trim()=== "/"} icon={<FaMusic />} title="Audio" />
+            <AppNavItem location="/video" active={location.pathname.trim()=== "/video"} icon={<FaVideo />} title="Video" />
+            <AppNavItem location="/image" active={location.pathname.trim()=== "/image"} icon={<FaImage />} title="Image" />
+            <AppNavItem location="/document" active={location.pathname.trim()=== "/document"} icon={<FaFile />} title="Document" />
             <AppNavItem
-              active="transfers"
+              location="/transfers" active={location.pathname.trim()=== "/transfers"}
               icon={<FiLoader />}
               title="Transfers"
             />
-          </nav>
+          </ul>
         </aside>
         <div className="hidden fixed bottom-4 w-[73vw] z-99 right-[25vw] translate-x-[23vw] md:block">
           <ActionBtns

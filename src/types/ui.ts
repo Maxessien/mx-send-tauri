@@ -1,12 +1,13 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactElement, ReactNode } from "react";
 
 import { FileResType } from "./files";
-import { ActiveTab } from "./activeTab";
+
 
 export interface NavItemProps {
   icon: ReactElement;
   title: string;
-  active: ActiveTab;
+  active: boolean;
+  location: string
 }
 
 export interface TabListItemProps {

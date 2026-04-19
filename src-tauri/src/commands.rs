@@ -63,19 +63,18 @@ pub struct FileRes {
 }
 
 #[cfg(target_os = "android")]
-fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 5] {
+fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 4] {
     let dirs = [
         PathBuf::from("/storage/emulated/0/Download"),
         PathBuf::from("/storage/emulated/0/Movies"),
         PathBuf::from("/storage/emulated/0/Pictures"),
         PathBuf::from("/storage/emulated/0/Music"),
-        PathBuf::from("/storage/emulated/0/Documents"),
     ];
     dirs
 }
 
 #[cfg(not(target_os = "android"))]
-fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 5] {
+fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 4] {
     let path = app.path();
     let home = path.home_dir().unwrap_or_else(|_| PathBuf::from("."));
     [
@@ -83,7 +82,6 @@ fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 5] {
         path.video_dir().unwrap_or_else(|_| home.join("Videos")),
         path.picture_dir().unwrap_or_else(|_| home.join("Pictures")),
         path.audio_dir().unwrap_or_else(|_| home.join("Music")),
-        path.document_dir().unwrap_or_else(|_| home.join("Documents")),
     ]
 }
 
