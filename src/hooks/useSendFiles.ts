@@ -29,7 +29,7 @@ const useSendFiles = () => {
           dispatch(updateTransferProgress({current, total: file.file_size, sender_id: appSession, ...file}))
         })
         await invoke("send_file", {
-          filePath: file.file_path, url, session_id: connectionInfo.session_id
+          filePath: file.file_path, url, sessionId: connectionInfo.session_id
         });
         unlisten()
         dispatch(updateTransferProgress({ ...file, sender_id: appSession, current: file.file_size, total: file.file_size }));
@@ -39,11 +39,9 @@ const useSendFiles = () => {
           headers: { Authorization: `Bearer ${connectionInfo.session_id}`, "Content-Type": "application/json" },
           body: JSON.stringify({ path: file.file_path, file_type:capitalise(type) }),
         });
-        console.log(res.ok)
         if (res.ok) {
-          console.log("runs")
-          const id: string = await res.json();
-          socket.current?.emit("newFile", id.toString());
+          const id: string = await res.text();
+          socket.current?.emit("newFile", id);
         }
         if (!res.ok)
           throw new Error(

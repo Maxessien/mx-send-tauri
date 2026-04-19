@@ -11,7 +11,6 @@ use std::sync::OnceLock;
 use tauri::AppHandle;
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
-use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
 

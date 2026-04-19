@@ -63,7 +63,7 @@ const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
 
         console.log(id)
         
-        await scanner.start(id, config, handleScanSuccess, (err) => console.log(err));
+        await scanner.start(id, config, handleScanSuccess, (err) => null)
       } catch (err) {
         console.log(err);
       }

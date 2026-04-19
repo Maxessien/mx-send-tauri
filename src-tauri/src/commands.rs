@@ -173,8 +173,7 @@ pub struct DownloadProgressPayload {
     pub file_name: String,
     pub file_path: String,
     pub file_size: u64,
-    #[serde(rename = "type")]
-    pub file_type_str: String,
+    pub file_type: String,
     pub total: u64,
     pub current: u64,
 }
@@ -283,7 +282,7 @@ pub async fn download_file_from_sender(
                 file_name: file_name.clone(),
                 file_path: file_path.clone(),
                 file_size,
-                file_type_str: file_type_str.clone(),
+                file_type: file_type_str.clone(),
                 total: file_size,
                 current,
             },
@@ -297,7 +296,7 @@ pub async fn download_file_from_sender(
             file_name: file_name.clone(),
             file_path: file_path.clone(),
             file_size,
-            file_type_str: file_type_str.clone(),
+            file_type: file_type_str.clone(),
             total: file_size,
             current: file_size,
         },

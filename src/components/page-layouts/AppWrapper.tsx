@@ -64,11 +64,13 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
       socket.current?.emit("newConnection", connectionInfo.session_id);
       if (socket.current) {
         socket.current.on("newFile", (data: string) => {
+          console.log("new file", data)
           downloadVideo(data);
         });
       }
 
       listen<any>("download_progress", (event) => {
+	      console.log("download", event)
         const fileInfo = event.payload;
         if (socket.current) {
           socket.current.emit("progress", {
@@ -77,7 +79,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           });
         }
         dispatch(
-          updateTransferProgress({ ...fileInfo, sender_id: appSessionId }),
+          updateTransferProgress({ ...fileInfo, type: fileInfo.file_type, sender_id: appSessionId }),
         );
       }).then((unlisten) => {
         unlistenTauri = unlisten;
