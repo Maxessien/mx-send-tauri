@@ -28,6 +28,7 @@ const useWebsocket = () => {
         console.log("Socket disconnected", { reason, desc }),
       );
       socket.current.on("newConnection", () => {
+        console.log("new connection")
         dispatch(
           setConnection({
             connectionInfo: connectionInfo,
@@ -38,6 +39,7 @@ const useWebsocket = () => {
         );
       });
       socket.current.on("progress", (data: Transfer) => {
+        console.log("progress", data)
         dispatch(updateTransferProgress(data));
       });
     }

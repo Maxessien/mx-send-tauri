@@ -102,6 +102,7 @@ pub async fn upload_file(
     Query(query): Query<UploadFileQuery>,
     body: Body,
 ) -> StatusCode {
+    println!("Uploading");
     let mut download_dir = match app.path().download_dir() {
         Ok(dir) => dir,
         Err(_) => return StatusCode::EXPECTATION_FAILED,

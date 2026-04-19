@@ -48,7 +48,7 @@ const useGetFiles = (fileType: FileResType, queryOptions?: UndefinedInitialDataO
 
 const useReceiver = () => {
   const { role, isConnected, connectionInfo } = useSelector(
-    (state: RootState) => ({ ...state.connection, ...state.allFiles, appSession: state.appSession }),
+    (state: RootState) => state.connection,
   );
   const downloadVideo = async (fileId: string) => {
     if (!isConnected || role !== "receiver") return;

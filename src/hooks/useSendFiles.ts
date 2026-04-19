@@ -1,20 +1,17 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
+import { updateTransferProgress } from "../store-slices/allFilesSlice";
 import { FileRes, FileResType } from "../types";
 import { capitalise } from "../utils/file-utils";
 import useWebsocket from "./useWebsocket";
-import { updateTransferProgress } from "../store-slices/allFilesSlice";
-import { listen } from "@tauri-apps/api/event"
 
 const useSendFiles = () => {
-  const { isConnected, role, connectionInfo, appSession } = useSelector(
-    (state: RootState) => ({
-      ...state.connection,
-      ...state.allFiles,
-      appSession: state.appSession,
-    }),
+  const { isConnected, role, connectionInfo } = useSelector(
+    (state: RootState) => state.connection,
   );
+  const appSession = useSelector((state: RootState)=>state.appSession)
   const { socket } = useWebsocket();
   const dispatch = useDispatch()
 
@@ -39,12 +36,14 @@ const useSendFiles = () => {
       } else {
         const res = await fetch(url, {
           method: "POST",
-          headers: { Authorization: `Bearer ${connectionInfo.session_id}` },
+          headers: { Authorization: `Bearer ${connectionInfo.session_id}`, "Content-Type": "application/json" },
           body: JSON.stringify({ path: file.file_path, file_type:capitalise(type) }),
         });
+        console.log(res.ok)
         if (res.ok) {
+          console.log("runs")
           const id: string = await res.json();
-          socket.current?.emit("newFile", id);
+          socket.current?.emit("newFile", id.toString());
         }
         if (!res.ok)
           throw new Error(

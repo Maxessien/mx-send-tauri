@@ -52,12 +52,10 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
   //Call websocket hook to initiate use effect that initiates socket globally when isConnected is true
   const { socket } = useWebsocket();
   const { downloadVideo } = useReceiver();
-  const { connectionInfo, isConnected, role, appSessionId } = useSelector(
-    (state: RootState) => ({
-      ...state.connection,
-      appSessionId: state.appSession,
-    }),
+  const { connectionInfo, isConnected, role } = useSelector(
+    (state: RootState) => state.connection,
   );
+  const appSessionId = useSelector((state: RootState)=>state.appSession)
 
   useEffect(() => {
     let unlistenTauri: () => void;
@@ -85,6 +83,8 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
         unlistenTauri = unlisten;
       });
     }
+
+    if (isConnected) setShowQrCode(state=>({...state, active: false}))
 
     return () => {
       socket.current?.off("newFile");
