@@ -76,14 +76,15 @@ fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 5] {
 
 #[cfg(not(target_os = "android"))]
 fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 5] {
-    let dirs = [
-        app.path().download_dir().unwrap(),
-        app.path().video_dir().unwrap(),
-        app.path().picture_dir().unwrap(),
-        app.path().audio_dir().unwrap(),
-        app.path().document_dir().unwrap(),
-    ];
-    dirs
+    let path = app.path();
+    let home = path.home_dir().unwrap_or_else(|_| PathBuf::from("."));
+    [
+        path.download_dir().unwrap_or_else(|_| home.join("Downloads")),
+        path.video_dir().unwrap_or_else(|_| home.join("Videos")),
+        path.picture_dir().unwrap_or_else(|_| home.join("Pictures")),
+        path.audio_dir().unwrap_or_else(|_| home.join("Music")),
+        path.document_dir().unwrap_or_else(|_| home.join("Documents")),
+    ]
 }
 
 #[tauri::command]
