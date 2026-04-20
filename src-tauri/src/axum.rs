@@ -10,7 +10,7 @@ use socketioxide::SocketIoBuilder;
 use tauri::AppHandle;
 use tokio::{net::TcpListener, sync::RwLock};
 use tokio_util::sync::CancellationToken;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::{cors::{Any, CorsLayer}, trace::TraceLayer};
 use uuid::Uuid;
 
 use crate::handler;
@@ -76,6 +76,7 @@ pub async fn create_server(app_handle: AppHandle) -> String {
                 ))
                 .layer(layer)
                 .layer(cors)
+		.layer(TraceLayer::new_for_http())
                 .with_state(app_handle);
         axum::serve(listener, app)
             .with_graceful_shutdown(async move {

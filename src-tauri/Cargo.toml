@@ -29,7 +29,7 @@ tokio = { version = "1.51.0", features = ["io-std", "io-util", "macros", "rt-mul
 tokio-util = { version = "0.7.18", features = ["io"] }
 uuid = { version = "1.23.0", features = ["v4"] }
 tower = "0.5.3"
-tower-http = { version = "0.6.8", features = ["cors"] }
+tower-http = { version = "0.6.8", features = ["cors", "trace"] }
 local-ip-address = "0.6.11"
 walkdir = "2.5.0"
 socketioxide = "0.18.3"
@@ -37,4 +37,7 @@ reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"
 async-stream = "0.3.6"
 tauri-plugin-android-external-storage = "0.1.0"
 tauri-plugin-safe-area-insets-css = "0.2.0"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+tauri-plugin-log = "2.8.0"
 
