@@ -7,9 +7,8 @@ use axum::{
     Router,
 };
 use socketioxide::SocketIoBuilder;
-use std::sync::OnceLock;
 use tauri::AppHandle;
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, sync::RwLock};
 use tokio_util::sync::CancellationToken;
 use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
@@ -46,13 +45,14 @@ async fn get_available_listener() -> (TcpListener, String) {
     (listener, String::from("3000"))
 }
 
-pub static CANCEL_TOKEN: OnceLock<CancellationToken> = OnceLock::new();
+pub static CANCEL_TOKEN: RwLock<Option<CancellationToken>> = RwLock::const_new(None);
 
 pub async fn create_server(app_handle: AppHandle) -> String {
     let (listener, port) = get_available_listener().await;
     tauri::async_runtime::spawn(async move {
         let token = CancellationToken::new();
-        let _ = CANCEL_TOKEN.set(token.clone());
+        let mut cancel = CANCEL_TOKEN.write().await;
+        *cancel = Some(token.clone());
         let cors = CorsLayer::new()
             .allow_methods([Method::POST, Method::GET, Method::DELETE, Method::PATCH])
             .allow_origin(Any)

@@ -49,9 +49,10 @@ pub async fn create_conn_server<'a>(
 
 #[tauri::command]
 pub async fn disconnect_server() -> Result<String, String> {
-    if let Some(token) = axum::CANCEL_TOKEN.get() {
+    let mut cancel = axum::CANCEL_TOKEN.write().await;
+    if let Some(token) = cancel.take() {
         token.cancel();
-    }
+    };
     Ok(String::from("Shutdown successful"))
 }
 
@@ -268,23 +269,28 @@ pub async fn download_file_from_sender(
     };
 
     let mut current = 0;
+    let mut emit_count = 1;
+    let emit_freq = (file_size as f32) * 0.1;
     while let Some(chunk) = res.chunk().await.map_err(|e| e.to_string())? {
         if file.write_all(&chunk).await.is_err() {
             return Err("Failed to write to file".to_string());
         }
         current += chunk.len() as u64;
 
-        let _ = app_handle.emit(
-            "download_progress",
-            DownloadProgressPayload {
-                file_name: file_name.clone(),
-                file_path: file_path.clone(),
-                file_size,
-                file_type: file_type_str.clone(),
-                total: file_size,
-                current,
-            },
-        );
+        if((current * emit_count) as f32) / emit_freq > 1.0 {
+            let _ = app_handle.emit(
+                "download_progress",
+                DownloadProgressPayload {
+                    file_name: file_name.clone(),
+                    file_path: file_path.clone(),
+                    file_size,
+                    file_type: file_type_str.clone(),
+                    total: file_size,
+                    current,
+                },
+            );
+            emit_count += 1;
+        };
     }
 
     // Final completion event

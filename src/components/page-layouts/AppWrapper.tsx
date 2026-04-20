@@ -59,6 +59,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
 
   useEffect(() => {
     let unlistenTauri: () => void;
+    let isMounted = true
 
     if (isConnected && role === "receiver") {
       socket.current?.emit("newConnection", connectionInfo.session_id);
@@ -68,6 +69,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           downloadVideo(data);
         });
       }
+      
 
       listen<any>("download_progress", (event) => {
 	      console.log("download", event)
@@ -82,13 +84,15 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           updateTransferProgress({ ...fileInfo, type: fileInfo.file_type, sender_id: appSessionId }),
         );
       }).then((unlisten) => {
-        unlistenTauri = unlisten;
+        if (isMounted) unlistenTauri = unlisten
+        else unlisten()
       });
     }
 
     if (isConnected) setShowQrCode(state=>({...state, active: false}))
 
     return () => {
+      isMounted = false
       socket.current?.off("newFile");
       if (unlistenTauri) unlistenTauri();
     };
