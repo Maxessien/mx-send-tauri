@@ -17,6 +17,7 @@ const App = () => {
     (async () => {
       try {
         await invoke("req_file_access");
+        await invoke("test_emit")
       } catch (err) {
         console.log(err);
       }

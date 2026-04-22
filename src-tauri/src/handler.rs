@@ -102,8 +102,7 @@ pub async fn upload_file(
     Query(query): Query<UploadFileQuery>,
     body: Body,
 ) -> StatusCode {
-    println!("Uploading");
-    let mut download_dir = match app.path().download_dir() {
+    let mut save_dir = match file_types::get_save_dir(&app).await {
         Ok(dir) => dir,
         Err(_) => return StatusCode::EXPECTATION_FAILED,
     };
@@ -118,20 +117,20 @@ pub async fn upload_file(
         None => return StatusCode::NOT_ACCEPTABLE,
     };
 
-    download_dir.push(format!("mxsend/{}", sub_folder));
+    save_dir.push(sub_folder);
 
-    if let Err(_) = tokio::fs::create_dir_all(&download_dir).await {
+    if let Err(_) = tokio::fs::create_dir_all(&save_dir).await {
         return StatusCode::INTERNAL_SERVER_ERROR;
     }
 
-    download_dir.push(safe_name);
+    save_dir.push(safe_name);
 
-    download_dir = match file_types::handle_duplicate_path(download_dir) {
+    save_dir = match file_types::handle_duplicate_path(save_dir) {
         Ok(path)=>path,
         Err(_)=>return StatusCode::INTERNAL_SERVER_ERROR
     };
 
-    let mut file = match File::create_new(&download_dir).await {
+    let mut file = match File::create_new(&save_dir).await {
         Ok(f) => f,
         Err(_) => return StatusCode::CONFLICT,
     };

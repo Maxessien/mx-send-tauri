@@ -79,10 +79,10 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
             ...fileInfo,
             sender_id: appSessionId,
           });
+          dispatch(
+            updateTransferProgress({ ...fileInfo, type: fileInfo.file_type, sender_id: appSessionId }),
+          );
         }
-        dispatch(
-          updateTransferProgress({ ...fileInfo, type: fileInfo.file_type, sender_id: appSessionId }),
-        );
       }).then((unlisten) => {
         if (isMounted) unlistenTauri = unlisten
         else unlisten()

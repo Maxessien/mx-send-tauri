@@ -18,7 +18,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_android_external_storage::init())
         .plugin(tauri_plugin_safe_area_insets_css::init())
-	.plugin(tauri_plugin_log::Builder::new()
+	    .plugin(tauri_plugin_log::Builder::new()
             // Log to terminal and webview console
             .targets([
                 Target::new(TargetKind::Stdout),
@@ -32,7 +32,8 @@ pub fn run() {
             commands::send_file,
             commands::save_file,
             commands::download_file_from_sender,
-            commands::req_file_access
+            commands::req_file_access,
+            commands::test_emit
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(commands::SessionId(Uuid::new_v4())))

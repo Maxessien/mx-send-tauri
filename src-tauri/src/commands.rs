@@ -64,7 +64,7 @@ pub struct FileRes {
 }
 
 #[cfg(target_os = "android")]
-fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 4] {
+fn get_dirs(_app: &tauri::AppHandle) -> [PathBuf; 4] {
     let dirs = [
         PathBuf::from("/storage/emulated/0/Download"),
         PathBuf::from("/storage/emulated/0/Movies"),
@@ -236,7 +236,7 @@ pub async fn download_file_from_sender(
         _ => handler::FileType::Document,
     };
 
-    let mut download_dir = match app_handle.path().download_dir() {
+    let mut download_dir = match file_types::get_save_dir(&app_handle).await {
         Ok(dir) => dir,
         Err(_) => return Err(String::from("Failed to get app folder")),
     };
@@ -374,4 +374,11 @@ pub async fn req_file_access(app: tauri::AppHandle) -> Result<String, String> {
         };
     };
     Ok("Finished".to_string())
+}
+
+
+#[tauri::command]
+pub fn test_emit (app: tauri::AppHandle)-> Result<String, String> {
+    let _ = app.emit("download_progress", "payload");
+    Ok("Emmited".to_string())
 }

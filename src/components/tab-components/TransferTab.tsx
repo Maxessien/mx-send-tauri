@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import TabListItem from "./TabListItem";
+import { capitalise } from "../../utils/file-utils";
 
 const TransferTab = () => {
   const transferring = useSelector((state: RootState) => state.allFiles.transferring);
@@ -47,7 +48,7 @@ const TransferTab = () => {
                       type={type}
                     />
                     <div
-                      style={{ width: `${(current / total) * 100}%` }}
+                      style={{ width: `${current >= total ? "100" : (current / total) * 100}%` }}
                       className="absolute bg-[rgb(30,58,138,0.3)] h-full top-0 left-0"
                     ></div>
                   </div>
@@ -56,7 +57,7 @@ const TransferTab = () => {
             )
         ) : (
           <p className="w-full text-center font-semibold text-2xl py-4">
-            No Files Transferring
+            No Files{` ${capitalise(activeTransferTab)}`}
           </p>
         )}
       </div>

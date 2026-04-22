@@ -48,12 +48,10 @@ const allFiles = createSlice({
         determineTransfersEqual(f, newTransfer),
       );
 
-      if (newTransfer.current >= newTransfer.total) {
-        state.transferring = state.transferring.filter(
-          (f) => !determineTransfersEqual(f, newTransfer),
-        );
-      } else if (existing) {
+      if (existing) {
         existing.current = newTransfer.current;
+      } else {
+        state.transferring = [...state.transferring, newTransfer];
       }
     },
   },

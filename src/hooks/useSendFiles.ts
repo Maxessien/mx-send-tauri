@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { updateTransferProgress } from "../store-slices/allFilesSlice";
@@ -11,12 +11,14 @@ const useSendFiles = () => {
   const { isConnected, role, connectionInfo } = useSelector(
     (state: RootState) => state.connection,
   );
-  const appSession = useSelector((state: RootState)=>state.appSession)
+  const appSession = useSelector((state: RootState) => state.appSession);
   const { socket } = useWebsocket();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
+    let unlisten: UnlistenFn = () => null;
+    let listening = false;
     try {
       const path =
         role === "receiver"
@@ -24,20 +26,50 @@ const useSendFiles = () => {
           : "upload";
       const url = `http://${connectionInfo.ip_address}:${connectionInfo.port}/${path}`;
       if (role === "receiver") {
-        const unlisten = await listen<{total: number, current: number}>("progress", ({payload: {current}})=>{
-          socket.current?.emit("progress", {current, total: file.file_size, sender_id: appSession, ...file})
-          dispatch(updateTransferProgress({current, total: file.file_size, sender_id: appSession, ...file}))
-        })
+        unlisten = await listen<{ total: number; current: number }>(
+          "progress",
+          ({ payload: { current } }) => {
+            socket.current?.emit("progress", {
+              current,
+              total: file.file_size,
+              sender_id: appSession,
+              ...file,
+            });
+            dispatch(
+              updateTransferProgress({
+                current,
+                total: file.file_size,
+                sender_id: appSession,
+                ...file,
+              }),
+            );
+          },
+        );
+        listening = true;
         await invoke("send_file", {
-          filePath: file.file_path, url, sessionId: connectionInfo.session_id
+          filePath: file.file_path,
+          url,
+          sessionId: connectionInfo.session_id,
         });
-        unlisten()
-        dispatch(updateTransferProgress({ ...file, sender_id: appSession, current: file.file_size, total: file.file_size }));
+        dispatch(
+          updateTransferProgress({
+            ...file,
+            sender_id: appSession,
+            current: file.file_size,
+            total: file.file_size,
+          }),
+        );
       } else {
         const res = await fetch(url, {
           method: "POST",
-          headers: { Authorization: `Bearer ${connectionInfo.session_id}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ path: file.file_path, file_type:capitalise(type) }),
+          headers: {
+            Authorization: `Bearer ${connectionInfo.session_id}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            path: file.file_path,
+            file_type: capitalise(type),
+          }),
         });
         if (res.ok) {
           const id: string = await res.text();
@@ -50,6 +82,8 @@ const useSendFiles = () => {
       }
     } catch (err) {
       console.log(err);
+    } finally {
+      if (listening) unlisten();
     }
   };
 

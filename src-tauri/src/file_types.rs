@@ -2,7 +2,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use tokio::fs::create_dir_all;
 use walkdir::DirEntry;
+
+use tauri::Manager;
 
 use crate::handler::FileType;
 
@@ -58,22 +61,36 @@ pub fn matches_file_type(file_type: &FileType, entry: &DirEntry) -> bool {
     entry.path().is_file() && extensions.contains(&entry_ext.as_str())
 }
 
-// pub fn matches_path(file_type: &FileType, path: &Path) -> bool {
-//     let extensions = match extensions_for(file_type) {
-//         Some(extensions) => extensions,
-//         None => return false,
-//     };
+#[cfg(target_os = "android")]
+pub async fn get_save_dir(_app: &tauri::AppHandle)->Result<PathBuf, String> {
+    let path = PathBuf::from("/storage/emulated/0/MxSend");
+    if path.exists() {
+        return Ok(path);
+    } else {
+        if let Err(_) = create_dir_all(&path).await {
+            return Err("Failed to create dir".to_string())
+        }
+        else {return Ok(path)};
+    };
+}
 
-//     let entry_ext = match path.extension() {
-//         Some(val) => match val.to_str() {
-//             Some(ext) => ext.to_lowercase(),
-//             None => return false,
-//         },
-//         None => return false,
-//     };
-
-//     path.is_file() && extensions.contains(&entry_ext.as_str())
-// }
+#[cfg(not(target_os = "android"))]
+pub async fn get_save_dir(app: &tauri::AppHandle)->Result<PathBuf, String> {
+    let path = match app.path().home_dir() {
+        Ok(buf) => buf,
+        Err(_)=> return Err("Failed to get home dir".to_string())
+    };
+    
+    let full_path = path.join("MxSend");
+    if path.exists() {
+        return Ok(full_path);
+    } else {
+        if let Err(_) = create_dir_all(&full_path).await {
+            return Err("Failed to create dir".to_string())
+        }
+        else {return Ok(full_path)};
+    };
+}
 
 pub fn handle_duplicate_path(path: PathBuf) -> Result<PathBuf, String> {
     if !path.exists() {
