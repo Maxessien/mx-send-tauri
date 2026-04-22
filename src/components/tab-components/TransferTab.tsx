@@ -34,7 +34,7 @@ const TransferTab = () => {
         </button>
       </div>
       <div className="w-full space-y-2">
-        {transferring.length > 0 ? (
+        {transferring.filter(({ sender_id }) => tabFilter(sender_id)).length > 0 ? (
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
             .map(

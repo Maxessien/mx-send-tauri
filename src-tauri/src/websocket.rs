@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use socketioxide::{
-    extract::{Data, SocketRef},
-    BroadcastError,
+    BroadcastError, SendError, extract::{Data, SocketRef}
 };
 
 #[derive(Serialize, Deserialize)]
@@ -24,11 +23,21 @@ fn handle_broadcast_events(res: Result<(), BroadcastError>) {
     }
 }
 
+fn handle_emit_events(res: Result<(), SendError>) {
+    match res {
+        Ok(_) => (),
+        Err(err) => {
+            dbg!(err);
+            ()
+        }
+    }
+}
+
 pub async fn handle_socket(socket: SocketRef) {
     socket.on(
         "progress",
         async |socket: SocketRef, Data(data): Data<Progress>| {
-            handle_broadcast_events(socket.broadcast().emit("progress", &data).await);
+            handle_emit_events(socket.emit("progress", &data));
         },
     );
     socket.on(

@@ -1,3 +1,5 @@
+import { Socket } from "socket.io-client";
+
 export interface ConnectionInfo {
   session_id: string;
   ip_address: string;
@@ -9,4 +11,5 @@ export interface ConnectionState {
   role: "sender" | "receiver";
   count: number;
   connectionInfo: ConnectionInfo;
+  socket: Socket | null
 }

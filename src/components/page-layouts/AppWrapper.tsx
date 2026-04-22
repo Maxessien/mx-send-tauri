@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { JSX, useEffect, useState } from "react";
 import { FaFile, FaImage, FaMusic, FaVideo } from "react-icons/fa";
 import { FiLoader } from "react-icons/fi";
@@ -8,13 +8,14 @@ import { useLocation } from "react-router";
 import { useReceiver } from "../../hooks/useGetFiles";
 import useWebsocket from "../../hooks/useWebsocket";
 import { RootState } from "../../store";
-import { updateTransferProgress } from "../../store-slices/allFilesSlice";
 import { setConnection } from "../../store-slices/connectionSlice";
 import ActionBtns from "./ActionBtns";
 import AppHeader from "./AppHeader";
 import AppNavItem from "./AppNavItem";
 import QrCodeDisplay from "./QrCodeDisplay";
 import QrScanner from "./QrScanner";
+import { DownloadProgress, FileRes, UploadProgress } from "../../types";
+import { toast } from "react-toastify";
 
 export interface ScannerState {
   active: boolean;
@@ -43,6 +44,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           isConnected: false,
           role: "receiver",
           connectionInfo: { ip_address: "", port: "", session_id: "" },
+          socket: null
         }),
       );
     } catch (err) {
@@ -55,50 +57,73 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
   const { connectionInfo, isConnected, role } = useSelector(
     (state: RootState) => state.connection,
   );
-  const appSessionId = useSelector((state: RootState)=>state.appSession)
+  const appSessionId = useSelector((state: RootState) => state.appSession);
 
   useEffect(() => {
-    let unlistenTauri: () => void;
-    let isMounted = true
+    let unlistenTauri: UnlistenFn[] = [];
+    let isMounted = true;
 
-    if (isConnected && role === "receiver") {
-      socket.current?.emit("newConnection", connectionInfo.session_id);
-      if (socket.current) {
-        socket.current.on("newFile", (data: string) => {
-          console.log("new file", data)
-          downloadVideo(data);
-        });
-      }
-      
+	if (isConnected){
+	setShowQrCode({ active: false, codeVal: "" });
+	setShowScanner({ active: false, codeVal: "" });
+	}
 
-      listen<any>("download_progress", (event) => {
-	      console.log("download", event)
-        const fileInfo = event.payload;
-        if (socket.current) {
-          socket.current.emit("progress", {
-            ...fileInfo,
-            sender_id: appSessionId,
-          });
-          dispatch(
-            updateTransferProgress({ ...fileInfo, type: fileInfo.file_type, sender_id: appSessionId }),
-          );
-        }
-      }).then((unlisten) => {
-        if (isMounted) unlistenTauri = unlisten
-        else unlisten()
+    if (isConnected && role === "receiver" && socket) {
+      socket.emit("newConnection", connectionInfo.session_id);
+      socket.on("newFile", (data: string) => {
+        downloadVideo(data);
       });
+      listen<DownloadProgress>("download_progress", (event) => {
+        const progress = event.payload;
+        socket?.emit("progress", {
+          ...progress,
+          sender_id: "Random id to just make transfer tab work",
+        });
+      })
+        .then((unlisten) => {
+          if (isMounted) unlistenTauri.push(unlisten);
+          else unlisten();
+        })
+        .catch(() => {
+          toast.error("Couldn't broadcast download progress");
+        });
+
+      listen<UploadProgress>("upload_progress", (event) => {
+        const { current, info } = event.payload;
+        const { file_name, file_path, file_size, type } = JSON.parse(
+          info,
+        ) as FileRes;
+        socket?.emit("progress", {
+          current,
+          file_name,
+          file_path,
+          file_size,
+          file_type: type,
+          total: file_size,
+          sender_id: appSessionId,
+        });
+      })
+        .then((unlisten) => {
+          if (isMounted) unlistenTauri.push(unlisten);
+          else unlisten();
+        })
+        .catch(() => {
+          toast.error("Couldn't broadcast upload progress");
+        });
     }
 
-    if (isConnected) setShowQrCode(state=>({...state, active: false}))
+    if (isConnected) setShowQrCode((state) => ({ ...state, active: false }));
 
     return () => {
-      isMounted = false
-      socket.current?.off("newFile");
-      if (unlistenTauri) unlistenTauri();
+      isMounted = false;
+      socket?.off("newFile");
+      unlistenTauri.forEach((fn) => {
+        fn();
+      });
     };
-  }, [isConnected, role]);
+  }, [isConnected, role, socket]);
 
-  const location = useLocation()
+  const location = useLocation();
 
   return (
     <div className="w-screen flex flex-col h-screen min-h-150">
@@ -125,12 +150,36 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
             />
           </div>
           <ul className="space-y-3 md:h-full md:w-full w-[90%] mx-auto px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2">
-            <AppNavItem location="/audio" active={location.pathname.trim()=== "/audio" || location.pathname.trim()=== "/"} icon={<FaMusic />} title="Audio" />
-            <AppNavItem location="/video" active={location.pathname.trim()=== "/video"} icon={<FaVideo />} title="Video" />
-            <AppNavItem location="/image" active={location.pathname.trim()=== "/image"} icon={<FaImage />} title="Image" />
-            <AppNavItem location="/document" active={location.pathname.trim()=== "/document"} icon={<FaFile />} title="Document" />
             <AppNavItem
-              location="/transfers" active={location.pathname.trim()=== "/transfers"}
+              location="/audio"
+              active={
+                location.pathname.trim() === "/audio" ||
+                location.pathname.trim() === "/"
+              }
+              icon={<FaMusic />}
+              title="Audio"
+            />
+            <AppNavItem
+              location="/video"
+              active={location.pathname.trim() === "/video"}
+              icon={<FaVideo />}
+              title="Video"
+            />
+            <AppNavItem
+              location="/image"
+              active={location.pathname.trim() === "/image"}
+              icon={<FaImage />}
+              title="Image"
+            />
+            <AppNavItem
+              location="/document"
+              active={location.pathname.trim() === "/document"}
+              icon={<FaFile />}
+              title="Document"
+            />
+            <AppNavItem
+              location="/transfers"
+              active={location.pathname.trim() === "/transfers"}
               icon={<FiLoader />}
               title="Transfers"
             />

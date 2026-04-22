@@ -90,13 +90,13 @@ const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-9999 flex items-center justify-center w-full h-full backdrop-blur-lg bg-[rgb(255,255,255,0.3)]">
+    <div className="fixed inset-0 z-9999 flex flex-col gap-2 items-center justify-center w-full h-full backdrop-blur-lg bg-[rgb(255,255,255,0.3)]">
       <HiX
         onClick={closeScanner}
         className="text-4xl cursor-pointer absolute top-6 right-6 z-10000"
       />
       <div id="reader" className="w-full max-w-100"></div>
-      <label className="text-lg font-medium cursor-pointer text-(--main-tertiary)" htmlFor="qrcode-image">
+      <label className="text-lg font-medium cursor-pointer text-shadow-black text-shadow-sm" htmlFor="qrcode-image">
         <span>Scan an image file</span>
         <input onChange={handleImageUpload} className="hidden" type="file" id="qrcode-image" />
       </label>

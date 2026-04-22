@@ -7,6 +7,8 @@ import { ConnectionInfo } from "../../types";
 import Button from "../reusable-components/Button";
 import { ScannerState } from "./AppWrapper";
 import { useState } from "react";
+import { toast } from "react-toastify";
+import { removeSelected, updateTransferProgress } from "../../store-slices/allFilesSlice";
 
 const ActionBtns = ({
   showQrCode,
@@ -19,9 +21,11 @@ const ActionBtns = ({
   openScanner: () => void;
   setQrCode: (state: ScannerState) => void;
 }) => {
-  const isConnected = useSelector((state: RootState) => state.connection.isConnected);
+  const isConnected = useSelector(
+    (state: RootState) => state.connection.isConnected,
+  );
   const selected = useSelector((state: RootState) => state.allFiles.selected);
-  const [sending, setSending] = useState(false)
+  const [sending, setSending] = useState(false);
 
   const dispatch = useDispatch();
 
@@ -29,16 +33,29 @@ const ActionBtns = ({
 
   const sendSelected = async () => {
     try {
-      setSending(true)
+      setSending(true);
+      selected.forEach((s) => {
+        dispatch(
+          updateTransferProgress({
+            ...s,
+            current: 0,
+            total: s.file_size,
+            //Use random string so it doesn't equal current device sender id
+            sender_id: "rand",
+          }),
+        );
+        dispatch(removeSelected(s))
+      });
       await Promise.all(
-      selected.map((file) => {
-        sendFile(file, file.type);
-      }),
-    );
+        selected.map((file) => {
+          sendFile(file, file.type);
+        }),
+      );
     } catch (err) {
-      console.log(err)
-    }finally{
-      setSending(false)
+      console.log(err);
+      toast.error("Couldn't send files");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -56,19 +73,26 @@ const ActionBtns = ({
       setQrCode({ active: true, codeVal: JSON.stringify(info) });
     } catch (err) {
       console.log(err);
+      toast.error("Failed to start server, make sure you have an active IP address")
     }
   };
 
   return (
     <div className="flex w-full gap-2 px-3 items-center">
       {isConnected ? (
-        <Button attrs={{ onClick: sendSelected , disabled: sending }} width="w-full">
+        <Button
+          attrs={{ onClick: sendSelected, disabled: sending }}
+          width="w-full"
+        >
           Send {selected.length > 0 && ` ${selected.length}`}
         </Button>
       ) : (
         <>
           <Button
-            attrs={{ onClick: startServer, disabled: showScanner.active || showQrCode.active }}
+            attrs={{
+              onClick: startServer,
+              disabled: showScanner.active || showQrCode.active,
+            }}
             className="flex-1"
             width=""
           >

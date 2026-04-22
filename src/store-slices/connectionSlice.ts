@@ -1,11 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { ConnectionState } from "../types";
 
+
 const initialState: ConnectionState = {
   isConnected: false,
   role: "receiver",
   count: 0,
   connectionInfo: { ip_address: "", port: "", session_id: "" },
+  socket: null
 };
 
 const connectionSlice = createSlice({

@@ -7,10 +7,21 @@ export interface FileRes {
   type: FileResType;
 }
 
+export interface DownloadProgress extends Omit<FileRes, "type"> {
+  file_type: FileResType;
+  current: number;
+  total: number;
+}
+
+export interface UploadProgress {
+  current: number;
+  info: string;
+}
+
 export interface Transfer extends FileRes {
   current: number;
   total: number;
-  sender_id: string
+  sender_id: string;
 }
 
 export interface AllFilesState {

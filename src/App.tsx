@@ -9,6 +9,7 @@ import ImageTab from "./components/tab-components/ImageTab";
 import TransferTab from "./components/tab-components/TransferTab";
 import VideoTab from "./components/tab-components/VideoTab";
 import { setWindow } from "./store-slices/windowSizeSlice";
+import { ToastContainer } from "react-toastify";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -17,14 +18,16 @@ const App = () => {
     (async () => {
       try {
         await invoke("req_file_access");
-        await invoke("test_emit")
+        await invoke("test_emit");
       } catch (err) {
         console.log(err);
       }
     })();
 
     const handleResize = () => {
-      dispatch(setWindow({ height: window.innerHeight, width: window.innerWidth }));
+      dispatch(
+        setWindow({ height: window.innerHeight, width: window.innerWidth }),
+      );
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -33,7 +36,7 @@ const App = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, [dispatch]);
-  
+
   return (
     <BrowserRouter>
       <AppWrapper>
@@ -46,6 +49,14 @@ const App = () => {
           <Route path="/transfers" element={<TransferTab />} />
         </Routes>
       </AppWrapper>
+      <ToastContainer
+        closeOnClick
+        draggable
+        newestOnTop
+        pauseOnHover
+        position="top-center"
+        theme="colored"
+      />
     </BrowserRouter>
   );
 };

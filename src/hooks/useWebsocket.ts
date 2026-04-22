@@ -1,45 +1,50 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import { RootState } from "../store";
 import { updateTransferProgress } from "../store-slices/allFilesSlice";
 import { setConnection } from "../store-slices/connectionSlice";
 import { Transfer } from "../types";
 
+
 const useWebsocket = () => {
-  const { connectionInfo, isConnected, role, count } = useSelector(
+  const { connectionInfo, isConnected, role, count, socket } = useSelector(
     (state: RootState) => state.connection,
   );
-  const socket = useRef<Socket | null>(null);
   const dispatch = useDispatch();
   useEffect(() => {
-    if (socket.current) {
-      socket.current.close();
-      socket.current = null;
+    if (socket) {
+      socket.close();
+      dispatch(setConnection({connectionInfo, count, isConnected, role, socket: null}))
     }
     if (isConnected || role === "sender") {
       const url = `http://${connectionInfo.ip_address}:${connectionInfo.port}`;
-      socket.current = io(url, {
+      const socketIo = io(url, {
         path: "/ws",
         query: { session: connectionInfo.session_id },
       });
-      socket.current.on("connect", () => console.log("Socket connected"));
-      socket.current.on("disconnect", (reason, desc) =>
+	
+        dispatch(setConnection({connectionInfo, count, isConnected, role, socket: socketIo}))
+
+      socketIo.on("connect", () => {
+        console.log("Socket connected")
+      });
+      socketIo.on("disconnect", (reason, desc) =>
         console.log("Socket disconnected", { reason, desc }),
       );
-      socket.current.on("newConnection", () => {
+      socketIo.on("newConnection", () => {
         console.log("new connection")
         dispatch(
           setConnection({
-            connectionInfo: connectionInfo,
+            connectionInfo,
             count: count + 1,
             isConnected: true,
-            role: role,
+            role,
+            socket: socketIo
           }),
         );
       });
-      socket.current.on("progress", (data: Transfer) => {
-        console.log("progress", data)
+      socketIo.on("progress", (data: Transfer) => {
         dispatch(updateTransferProgress(data));
       });
     }

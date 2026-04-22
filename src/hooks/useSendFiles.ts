@@ -1,24 +1,19 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { updateTransferProgress } from "../store-slices/allFilesSlice";
 import { FileRes, FileResType } from "../types";
 import { capitalise } from "../utils/file-utils";
-import useWebsocket from "./useWebsocket";
 
 const useSendFiles = () => {
-  const { isConnected, role, connectionInfo } = useSelector(
+  const { isConnected, role, connectionInfo, socket } = useSelector(
     (state: RootState) => state.connection,
   );
   const appSession = useSelector((state: RootState) => state.appSession);
-  const { socket } = useWebsocket();
   const dispatch = useDispatch();
 
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
-    let unlisten: UnlistenFn = () => null;
-    let listening = false;
     try {
       const path =
         role === "receiver"
@@ -26,30 +21,19 @@ const useSendFiles = () => {
           : "upload";
       const url = `http://${connectionInfo.ip_address}:${connectionInfo.port}/${path}`;
       if (role === "receiver") {
-        unlisten = await listen<{ total: number; current: number }>(
-          "progress",
-          ({ payload: { current } }) => {
-            socket.current?.emit("progress", {
-              current,
-              total: file.file_size,
-              sender_id: appSession,
-              ...file,
-            });
-            dispatch(
-              updateTransferProgress({
-                current,
-                total: file.file_size,
-                sender_id: appSession,
-                ...file,
-              }),
-            );
-          },
+        dispatch(
+          updateTransferProgress({
+            ...file,
+            sender_id: appSession,
+            current: 0,
+            total: file.file_size,
+          }),
         );
-        listening = true;
         await invoke("send_file", {
           filePath: file.file_path,
           url,
           sessionId: connectionInfo.session_id,
+          fileInfo: JSON.stringify(file)
         });
         dispatch(
           updateTransferProgress({
@@ -73,7 +57,15 @@ const useSendFiles = () => {
         });
         if (res.ok) {
           const id: string = await res.text();
-          socket.current?.emit("newFile", id);
+          socket?.emit("newFile", id);
+        dispatch(
+          updateTransferProgress({
+            ...file,
+            sender_id: appSession,
+            current: 0,
+            total: file.file_size,
+          }),
+        );
         }
         if (!res.ok)
           throw new Error(
@@ -82,8 +74,6 @@ const useSendFiles = () => {
       }
     } catch (err) {
       console.log(err);
-    } finally {
-      if (listening) unlisten();
     }
   };
 

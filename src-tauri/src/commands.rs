@@ -127,6 +127,7 @@ pub async fn list_files(
 #[derive(Serialize, Clone)]
 pub struct ByteProgress {
     pub current: usize,
+    pub info: String,
 }
 
 #[tauri::command]
@@ -135,6 +136,7 @@ pub async fn send_file(
     url: String,
     session_id: String,
     app: tauri::AppHandle,
+    file_info: String,
 ) -> Result<String, String> {
     let mut headers = header::HeaderMap::new();
     let sess_id = format!("Bearer {}", session_id);
@@ -153,7 +155,7 @@ pub async fn send_file(
         while let Some(chunk) = reader_stream.next().await {
         if let Ok(ref bytes) = chunk{
             curr += bytes.len();
-            let _ = app.emit("progress", ByteProgress{current: curr});
+            let _ = app.emit("upload_progress", ByteProgress{current: curr, info: file_info.clone()});
         };
         yield chunk;
     }
@@ -247,7 +249,7 @@ pub async fn download_file_from_sender(
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
-    download_dir.push(format!("mxsend/{}", sub_folder));
+    download_dir.push(sub_folder);
     if tokio::fs::create_dir_all(&download_dir).await.is_err() {
         return Err("Failed to create download dir".to_string());
     }
