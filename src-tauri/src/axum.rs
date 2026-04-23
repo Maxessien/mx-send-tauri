@@ -3,14 +3,21 @@ use std::path::PathBuf;
 use axum::{
     http::Method,
     middleware,
-    routing::{ get, post},
+    routing::{get, post},
     Router,
 };
-use socketioxide::SocketIoBuilder;
+use serde::{Deserialize, Serialize};
+use socketioxide::{
+    extract::{Data, SocketRef},
+    SocketIoBuilder,
+};
 use tauri::AppHandle;
 use tokio::{net::TcpListener, sync::RwLock};
 use tokio_util::sync::CancellationToken;
-use tower_http::{cors::{Any, CorsLayer}, trace::TraceLayer};
+use tower_http::{
+    cors::{Any, CorsLayer},
+    trace::TraceLayer,
+};
 use uuid::Uuid;
 
 use crate::handler;
@@ -47,6 +54,16 @@ async fn get_available_listener() -> (TcpListener, String) {
 
 pub static CANCEL_TOKEN: RwLock<Option<CancellationToken>> = RwLock::const_new(None);
 
+#[derive(Serialize, Deserialize)]
+struct Progress {
+    current: u64,
+    total: u64,
+    file_name: String,
+    file_size: u64,
+    file_type: String,
+    sender_id: String,
+}
+
 pub async fn create_server(app_handle: AppHandle) -> String {
     let (listener, port) = get_available_listener().await;
     tauri::async_runtime::spawn(async move {
@@ -63,21 +80,32 @@ pub async fn create_server(app_handle: AppHandle) -> String {
                 "file_size".parse().unwrap(),
                 "file_type".parse().unwrap(),
             ]);
+
         let (layer, io) = SocketIoBuilder::new().req_path("/ws").build_layer();
-        io.ns("/", websocket::handle_socket);
-        let app =
-            Router::new()
-                .route("/upload", post(handler::add_to_filelist))
-                .route("/download", get(handler::download_from_filelist))
-                .route("/receiver/upload", post(handler::upload_file))
-                .route_layer(middleware::from_fn_with_state(
-                    app_handle.clone(),
-                    handler::verify_session_id,
-                ))
-                .layer(layer)
-                .layer(cors)
-		.layer(TraceLayer::new_for_http())
-                .with_state(app_handle);
+        let io_out_clone = io.clone();
+        io.ns("/", async move |s: SocketRef| {
+            let io_clone = io_out_clone.clone();
+            s.on(
+                "progress",
+                async move |_socket: SocketRef, Data(data): Data<Progress>| {
+                    websocket::handle_broadcast_events(io_clone.emit("progress", &data).await);
+                },
+            );
+            websocket::handle_socket(s).await
+        });
+        
+        let app = Router::new()
+            .route("/upload", post(handler::add_to_filelist))
+            .route("/download", get(handler::download_from_filelist))
+            .route("/receiver/upload", post(handler::upload_file))
+            .route_layer(middleware::from_fn_with_state(
+                app_handle.clone(),
+                handler::verify_session_id,
+            ))
+            .layer(layer)
+            .layer(cors)
+            .layer(TraceLayer::new_for_http())
+            .with_state(app_handle);
         axum::serve(listener, app)
             .with_graceful_shutdown(async move {
                 token.cancelled().await;

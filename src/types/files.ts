@@ -11,6 +11,7 @@ export interface DownloadProgress extends Omit<FileRes, "type"> {
   file_type: FileResType;
   current: number;
   total: number;
+  sender_id: string;
 }
 
 export interface UploadProgress {

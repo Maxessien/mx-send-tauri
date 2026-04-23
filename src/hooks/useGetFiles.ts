@@ -50,12 +50,13 @@ const useReceiver = () => {
   const { role, isConnected, connectionInfo } = useSelector(
     (state: RootState) => state.connection,
   );
-  const downloadVideo = async (fileId: string) => {
+  const downloadVideo = async (fileId: string, senderId: string) => {
     if (!isConnected || role !== "receiver") return;
     try {
       await invoke("download_file_from_sender", {
         url: `http://${connectionInfo.ip_address}:${connectionInfo.port}/download?id=${fileId}`,
         sessionId: connectionInfo.session_id,
+        senderId
       });
     } catch (err) {
       console.log(err);

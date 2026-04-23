@@ -70,14 +70,13 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
 
     if (isConnected && role === "receiver" && socket) {
       socket.emit("newConnection", connectionInfo.session_id);
-      socket.on("newFile", (data: string) => {
-        downloadVideo(data);
+      socket.on("newFile", (data: {file_id: string, sender_id: string}) => {
+        downloadVideo(data.file_id, data.sender_id);
       });
       listen<DownloadProgress>("download_progress", (event) => {
         const progress = event.payload;
         socket?.emit("progress", {
           ...progress,
-          sender_id: "Random id to just make transfer tab work",
         });
       })
         .then((unlisten) => {

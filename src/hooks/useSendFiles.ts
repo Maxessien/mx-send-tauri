@@ -33,7 +33,7 @@ const useSendFiles = () => {
           filePath: file.file_path,
           url,
           sessionId: connectionInfo.session_id,
-          fileInfo: JSON.stringify(file)
+          fileInfo: JSON.stringify(file),
         });
         dispatch(
           updateTransferProgress({
@@ -57,15 +57,15 @@ const useSendFiles = () => {
         });
         if (res.ok) {
           const id: string = await res.text();
-          socket?.emit("newFile", id);
-        dispatch(
-          updateTransferProgress({
-            ...file,
-            sender_id: appSession,
-            current: 0,
-            total: file.file_size,
-          }),
-        );
+          socket?.emit("newFile", {file_id: id, sender_id: appSession});
+          dispatch(
+            updateTransferProgress({
+              ...file,
+              sender_id: appSession,
+              current: 0,
+              total: file.file_size,
+            }),
+          );
         }
         if (!res.ok)
           throw new Error(

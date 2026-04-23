@@ -45,6 +45,7 @@ const useWebsocket = () => {
         );
       });
       socketIo.on("progress", (data: Transfer) => {
+	console.log(data)
         dispatch(updateTransferProgress(data));
       });
     }

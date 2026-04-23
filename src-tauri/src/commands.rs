@@ -4,6 +4,7 @@ use local_ip_address::local_ip;
 use reqwest::{header, Body, ClientBuilder};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 use tauri_plugin_android_external_storage::AndroidExternalStorageExt;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -151,11 +152,15 @@ pub async fn send_file(
     };
     let mut curr = 0;
     let mut reader_stream = ReaderStream::new(file);
+    let mut last_emit = Instant::now();
     let progress_stream = stream! {
         while let Some(chunk) = reader_stream.next().await {
         if let Ok(ref bytes) = chunk{
             curr += bytes.len();
-            let _ = app.emit("upload_progress", ByteProgress{current: curr, info: file_info.clone()});
+            if last_emit.elapsed() >= Duration::from_millis(100){
+                let _ = app.emit("upload_progress", ByteProgress{current: curr, info: file_info.clone()});
+                last_emit = Instant::now();
+            };
         };
         yield chunk;
     }
@@ -179,6 +184,7 @@ pub struct DownloadProgressPayload {
     pub file_type: String,
     pub total: u64,
     pub current: u64,
+    pub sender_id: String
 }
 
 #[tauri::command]
@@ -186,6 +192,7 @@ pub async fn download_file_from_sender(
     url: String,
     session_id: String,
     app_handle: tauri::AppHandle,
+    sender_id: String,
 ) -> Result<String, String> {
     let mut headers = header::HeaderMap::new();
     let sess_id = format!("Bearer {}", session_id);
@@ -271,15 +278,14 @@ pub async fn download_file_from_sender(
     };
 
     let mut current = 0;
-    let mut emit_count = 1;
-    let emit_freq = (file_size as f32) * 0.1;
+    let mut last_emit = Instant::now();
     while let Some(chunk) = res.chunk().await.map_err(|e| e.to_string())? {
         if file.write_all(&chunk).await.is_err() {
             return Err("Failed to write to file".to_string());
         }
         current += chunk.len() as u64;
-
-        if((current * emit_count) as f32) / emit_freq > 1.0 {
+        let duration = Duration::from_millis(100);
+        if last_emit.elapsed() >= duration {
             let _ = app_handle.emit(
                 "download_progress",
                 DownloadProgressPayload {
@@ -289,9 +295,10 @@ pub async fn download_file_from_sender(
                     file_type: file_type_str.clone(),
                     total: file_size,
                     current,
+                    sender_id: sender_id.clone()
                 },
             );
-            emit_count += 1;
+            last_emit = Instant::now();
         };
     }
 
@@ -305,6 +312,7 @@ pub async fn download_file_from_sender(
             file_type: file_type_str.clone(),
             total: file_size,
             current: file_size,
+            sender_id
         },
     );
 
