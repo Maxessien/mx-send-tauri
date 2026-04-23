@@ -35,15 +35,6 @@ const ActionBtns = ({
     try {
       setSending(true);
       selected.forEach((s) => {
-        dispatch(
-          updateTransferProgress({
-            ...s,
-            current: 0,
-            total: s.file_size,
-            //Use random string so it doesn't equal current device sender id
-            sender_id: "rand",
-          }),
-        );
         dispatch(removeSelected(s))
       });
       await Promise.all(

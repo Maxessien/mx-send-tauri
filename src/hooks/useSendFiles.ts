@@ -56,6 +56,12 @@ const useSendFiles = () => {
           }),
         });
         if (res.ok) {
+	console.log({
+              ...file,
+              sender_id: appSession,
+              current: 0,
+              total: file.file_size,
+            })
           const id: string = await res.text();
           socket?.emit("newFile", {file_id: id, sender_id: appSession});
           dispatch(

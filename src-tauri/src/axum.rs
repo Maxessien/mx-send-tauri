@@ -61,6 +61,7 @@ struct Progress {
     file_name: String,
     file_size: u64,
     file_type: String,
+    file_path: String,
     sender_id: String,
 }
 

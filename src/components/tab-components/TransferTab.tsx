@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import TabListItem from "./TabListItem";
-import { capitalise } from "../../utils/file-utils";
+import { capitalise, FILE_PREVIEW_IMAGES } from "../../utils/file-utils";
 
 const TransferTab = () => {
   const transferring = useSelector((state: RootState) => state.allFiles.transferring);
@@ -38,7 +38,7 @@ const TransferTab = () => {
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
             .map(
-              ({ file_name, file_path, file_size, type, current, total }) => {
+              ({ file_name, file_path, file_type, file_size, type, current, total }) => {
                 return (
                   <div key={file_name + file_path} className="relative w-full rounded-md">
                     <TabListItem
@@ -46,6 +46,7 @@ const TransferTab = () => {
                       filePath={file_path}
                       fileSize={file_size}
                       type={type}
+			previewImgUrl={file_type ? FILE_PREVIEW_IMAGES?.[file_type] : undefined}
                     />
                     <div
                       style={{ width: `${current >= total ? "100" : (current / total) * 100}%` }}
