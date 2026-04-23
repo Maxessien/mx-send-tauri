@@ -5,7 +5,9 @@ import TabListItem from "./TabListItem";
 import { capitalise, FILE_PREVIEW_IMAGES } from "../../utils/file-utils";
 
 const TransferTab = () => {
-  const transferring = useSelector((state: RootState) => state.allFiles.transferring);
+  const transferring = useSelector(
+    (state: RootState) => state.allFiles.transferring,
+  );
   const appSessionId = useSelector((state: RootState) => state.appSession);
   const [activeTransferTab, setActiveTransferTab] = useState<
     "sending" | "receiving"
@@ -34,22 +36,38 @@ const TransferTab = () => {
         </button>
       </div>
       <div className="w-full space-y-2">
-        {transferring.filter(({ sender_id }) => tabFilter(sender_id)).length > 0 ? (
+        {transferring.filter(({ sender_id }) => tabFilter(sender_id)).length >
+        0 ? (
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
             .map(
-              ({ file_name, file_path, file_type, file_size, type, current, total }) => {
+              ({
+                file_name,
+                file_path,
+                file_type,
+                file_size,
+                type,
+                current,
+                total,
+              }) => {
                 return (
-                  <div key={file_name + file_path} className="relative w-full rounded-md">
+                  <div
+                    key={file_name + file_path}
+                    className="relative w-full rounded-md"
+                  >
                     <TabListItem
                       fileName={file_name}
                       filePath={file_path}
                       fileSize={file_size}
                       type={type}
-			previewImgUrl={file_type ? FILE_PREVIEW_IMAGES?.[file_type] : undefined}
+                      previewImgUrl={
+                        file_type ? FILE_PREVIEW_IMAGES?.[file_type] : undefined
+                      }
                     />
                     <div
-                      style={{ width: `${current >= total ? "100" : (current / total) * 100}%` }}
+                      style={{
+                        width: `${current >= total ? "100" : (current / total) * 100}%`,
+                      }}
                       className="absolute bg-[rgb(30,58,138,0.3)] h-full top-0 left-0"
                     ></div>
                   </div>

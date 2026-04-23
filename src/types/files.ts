@@ -23,6 +23,7 @@ export interface Transfer extends FileRes {
   current: number;
   total: number;
   sender_id: string;
+  file_type?: FileResType
 }
 
 export interface AllFilesState {

@@ -8,7 +8,7 @@ import Button from "../reusable-components/Button";
 import { ScannerState } from "./AppWrapper";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { removeSelected, updateTransferProgress } from "../../store-slices/allFilesSlice";
+import { removeSelected } from "../../store-slices/allFilesSlice";
 
 const ActionBtns = ({
   showQrCode,
@@ -21,8 +21,8 @@ const ActionBtns = ({
   openScanner: () => void;
   setQrCode: (state: ScannerState) => void;
 }) => {
-  const isConnected = useSelector(
-    (state: RootState) => state.connection.isConnected,
+  const {isConnected, socket} = useSelector(
+    (state: RootState) => state.connection,
   );
   const selected = useSelector((state: RootState) => state.allFiles.selected);
   const [sending, setSending] = useState(false);
@@ -59,6 +59,7 @@ const ActionBtns = ({
           count: 1,
           isConnected: false,
           role: "sender",
+          socket
         }),
       );
       setQrCode({ active: true, codeVal: JSON.stringify(info) });

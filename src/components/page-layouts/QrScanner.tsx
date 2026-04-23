@@ -14,6 +14,7 @@ const getWidth = (width: number) => {
 const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
   const dispatch = useDispatch();
   const { width } = useSelector((state: RootState) => state.windowSize);
+  const {socket} = useSelector((state: RootState)=>state.connection)
 
   const handleScanSuccess = (res: string) => {
     try {
@@ -24,6 +25,7 @@ const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
           count: 1,
           isConnected: true,
           role: "receiver",
+          socket
         }),
       );
       closeScanner();
@@ -35,6 +37,7 @@ const QrScanner = ({ closeScanner }: { closeScanner: () => void }) => {
           count: 0,
           isConnected: false,
           role: "receiver",
+          socket
         }),
       );
     }
