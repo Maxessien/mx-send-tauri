@@ -80,7 +80,8 @@ fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 4] {
     let path = app.path();
     let home = path.home_dir().unwrap_or_else(|_| PathBuf::from("."));
     [
-        path.download_dir().unwrap_or_else(|_| home.join("Downloads")),
+        path.download_dir()
+            .unwrap_or_else(|_| home.join("Downloads")),
         path.video_dir().unwrap_or_else(|_| home.join("Videos")),
         path.picture_dir().unwrap_or_else(|_| home.join("Pictures")),
         path.audio_dir().unwrap_or_else(|_| home.join("Music")),
@@ -150,20 +151,22 @@ pub async fn send_file(
         Ok(f) => f,
         Err(_) => return Err(String::from("File not found")),
     };
+    let app_clone = app.clone();
+    let file_info_clone = file_info.clone();
     let mut curr = 0;
     let mut reader_stream = ReaderStream::new(file);
     let mut last_emit = Instant::now();
     let progress_stream = stream! {
-        while let Some(chunk) = reader_stream.next().await {
-        if let Ok(ref bytes) = chunk{
-            curr += bytes.len();
-            if last_emit.elapsed() >= Duration::from_millis(100){
-                let _ = app.emit("upload_progress", ByteProgress{current: curr, info: file_info.clone()});
-                last_emit = Instant::now();
+            while let Some(chunk) = reader_stream.next().await {
+            if let Ok(ref bytes) = chunk{
+                curr += bytes.len();
+                if last_emit.elapsed() >= Duration::from_millis(100){
+                    let _ = app_clone.emit("upload_progress", ByteProgress{current: curr, info: file_info_clone.clone()});
+                    last_emit = Instant::now();
+                };
             };
-        };
-        yield chunk;
-    }
+            yield chunk;
+        }
     };
     let body = Body::wrap_stream(progress_stream);
     let client = ClientBuilder::new()
@@ -171,7 +174,16 @@ pub async fn send_file(
         .build()
         .unwrap();
     match client.post(url).body(body).send().await {
-        Ok(_) => Ok("Sent".to_string()),
+        Ok(_) => {
+            let _ = app.emit(
+                "upload_progress",
+                ByteProgress {
+                    current: curr,
+                    info: file_info.clone(),
+                },
+            );
+            return Ok("Sent".to_string());
+        }
         Err(_) => Err("Failed to send".to_string()),
     }
 }
@@ -184,7 +196,7 @@ pub struct DownloadProgressPayload {
     pub file_type: String,
     pub total: u64,
     pub current: u64,
-    pub sender_id: String
+    pub sender_id: String,
 }
 
 #[tauri::command]
@@ -295,7 +307,7 @@ pub async fn download_file_from_sender(
                     file_type: file_type_str.clone(),
                     total: file_size,
                     current,
-                    sender_id: sender_id.clone()
+                    sender_id: sender_id.clone(),
                 },
             );
             last_emit = Instant::now();
@@ -312,7 +324,7 @@ pub async fn download_file_from_sender(
             file_type: file_type_str.clone(),
             total: file_size,
             current: file_size,
-            sender_id
+            sender_id,
         },
     );
 
@@ -386,9 +398,8 @@ pub async fn req_file_access(app: tauri::AppHandle) -> Result<String, String> {
     Ok("Finished".to_string())
 }
 
-
 #[tauri::command]
-pub fn test_emit (app: tauri::AppHandle)-> Result<String, String> {
+pub fn test_emit(app: tauri::AppHandle) -> Result<String, String> {
     let _ = app.emit("download_progress", "payload");
     Ok("Emmited".to_string())
 }

@@ -4,7 +4,7 @@ const interfaces = {
   primary:
     "bg-(--main-primary) text-(--text-primary-light) hover:bg-(--main-primary-light)",
   secondary:
-    "text-(--main-primary) shadow-[0px_0.4px_10px_-7px_black] bg-(--main-primary-light) hover:bg-red-200",
+    "text-(--text-primary-light) shadow-[0px_0.4px_10px_-7px_black] bg-(--main-secondary-light) hover:bg-(--main-secondary)",
   tertiary:
     "bg-transparent text-(--main-primary) border-[2px] border-(--main-primary)",
 };

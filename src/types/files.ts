@@ -34,3 +34,9 @@ export interface AllFilesState {
   transferring: Transfer[];
   selected: FileRes[];
 }
+
+export interface List {
+  list: FileRes[];
+  sortBy: "name" | "size";
+  direction: "asc" | "desc";
+}

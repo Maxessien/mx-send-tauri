@@ -14,10 +14,7 @@ use socketioxide::{
 use tauri::AppHandle;
 use tokio::{net::TcpListener, sync::RwLock};
 use tokio_util::sync::CancellationToken;
-use tower_http::{
-    cors::{Any, CorsLayer},
-    trace::TraceLayer,
-};
+use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
 
 use crate::handler;
@@ -94,6 +91,7 @@ pub async fn create_server(app_handle: AppHandle) -> String {
             );
             websocket::handle_socket(s).await
         });
+        let io_shutdown = io.clone();
         
         let app = Router::new()
             .route("/upload", post(handler::add_to_filelist))
@@ -105,11 +103,11 @@ pub async fn create_server(app_handle: AppHandle) -> String {
             ))
             .layer(layer)
             .layer(cors)
-            .layer(TraceLayer::new_for_http())
             .with_state(app_handle);
         axum::serve(listener, app)
             .with_graceful_shutdown(async move {
                 token.cancelled().await;
+                io_shutdown.close().await;
                 println!("Axum server stopped, but the app is still running!");
             })
             .await

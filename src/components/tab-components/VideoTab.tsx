@@ -1,4 +1,5 @@
-import { Tab } from "./AudioTab";
+import Tab from "./Tab";
+
 
 const VideoTab = () => {
   return <Tab tabType="video" tabTitle="Video Files" />;

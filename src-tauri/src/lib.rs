@@ -2,7 +2,6 @@
 
 use crate::axum::AllowedFileList;
 use futures_util::lock::Mutex;
-use tauri_plugin_log::{Target, TargetKind};
 use uuid::Uuid;
 // use async_;
 
@@ -18,13 +17,6 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_android_external_storage::init())
         .plugin(tauri_plugin_safe_area_insets_css::init())
-	    .plugin(tauri_plugin_log::Builder::new()
-            // Log to terminal and webview console
-            .targets([
-                Target::new(TargetKind::Stdout),
-                Target::new(TargetKind::Webview),
-            ])
-            .build())
         .invoke_handler(tauri::generate_handler![
             commands::create_conn_server,
             commands::disconnect_server,

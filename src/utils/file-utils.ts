@@ -1,4 +1,4 @@
-import { FileRes, FileResType, Transfer } from "../types";
+import { FileRes, FileResType, List, Transfer } from "../types";
 
 export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
   audio: "/audio-icon.jpg",
@@ -19,7 +19,6 @@ export const determineTransfersEqual = (
 ) =>
   determineFilesEqual(transfer1, transfer2) &&
   transfer1.sender_id === transfer2.sender_id;
-
 
 export const formatFileSize = (size: number) => {
   if (size < Math.pow(1024, 2)) return `${(size / 1024).toFixed(0)} KB`;
@@ -50,4 +49,28 @@ export const capitalise = (word: string) => {
   const rest = word.slice(1);
 
   return first.toUpperCase() + rest;
+};
+
+const checkFieldInList = (list: { [key: string]: any }[], field: string) => {
+  return list.every((item) => item?.[field]);
+};
+
+export const sortFileList = ({direction, list, sortBy}: List) => {
+  const fieldPresent =
+    sortBy === "name"
+      ? checkFieldInList(list, "file_name")
+      : checkFieldInList(list, "file_size");
+  if (!fieldPresent) return list;
+
+  const listCopy = [...list]
+
+  const sorted = listCopy.sort((a, b) =>
+    sortBy === "name"
+      ? a.file_name.localeCompare(b.file_name)
+      : a.file_size - b.file_size,
+  );
+
+  const final = direction === "asc" ? sorted : sorted.reverse()
+
+  return final;
 };

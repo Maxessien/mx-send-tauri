@@ -47,7 +47,6 @@ const allFiles = createSlice({
       const existing = state.transferring.find((f) =>
         determineTransfersEqual(f, newTransfer),
       );
-	console.log(newTransfer, existing?.sender_id)
 
       if (existing) {
         existing.current = newTransfer.current;

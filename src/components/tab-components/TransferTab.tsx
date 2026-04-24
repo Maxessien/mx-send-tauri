@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
-import TabListItem from "./TabListItem";
-import { capitalise, FILE_PREVIEW_IMAGES } from "../../utils/file-utils";
+import {
+  capitalise,
+  FILE_PREVIEW_IMAGES,
+  formatFileSize,
+} from "../../utils/file-utils";
 
 const TransferTab = () => {
   const transferring = useSelector(
@@ -55,15 +58,27 @@ const TransferTab = () => {
                     key={file_name + file_path}
                     className="relative w-full rounded-md"
                   >
-                    <TabListItem
-                      fileName={file_name}
-                      filePath={file_path}
-                      fileSize={file_size}
-                      type={type}
-                      previewImgUrl={
-                        file_type ? FILE_PREVIEW_IMAGES?.[file_type] : undefined
-                      }
-                    />
+                    <div className="flex relative w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
+                      <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
+                        <img
+                          className="object-cover object-center w-full h-full"
+                          src={
+                            file_type
+                              ? FILE_PREVIEW_IMAGES?.[file_type]
+                              : FILE_PREVIEW_IMAGES?.[type]
+                          }
+                          alt="Image"
+                        />
+                      </div>
+                      <div className="space-y-2 min-w-20 flex-1">
+                        <p className="sm:text-base text-sm wrap-break-word font-medium text-left">
+                          {file_name}
+                        </p>
+                        <p className="text-sm wrap-break-word font-medium text-left">
+                          {formatFileSize(file_size)}
+                        </p>
+                      </div>
+                    </div>
                     <div
                       style={{
                         width: `${current >= total ? "100" : (current / total) * 100}%`,

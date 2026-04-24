@@ -5,17 +5,17 @@ import { FaFile, FaImage, FaMusic, FaVideo } from "react-icons/fa";
 import { FiLoader } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router";
+import { toast } from "react-toastify";
 import { useReceiver } from "../../hooks/useGetFiles";
 import useWebsocket from "../../hooks/useWebsocket";
 import { RootState } from "../../store";
 import { setConnection } from "../../store-slices/connectionSlice";
+import { DownloadProgress, FileRes, UploadProgress } from "../../types";
 import ActionBtns from "./ActionBtns";
 import AppHeader from "./AppHeader";
 import AppNavItem from "./AppNavItem";
 import QrCodeDisplay from "./QrCodeDisplay";
 import QrScanner from "./QrScanner";
-import { DownloadProgress, FileRes, UploadProgress } from "../../types";
-import { toast } from "react-toastify";
 
 export interface ScannerState {
   active: boolean;
@@ -32,6 +32,8 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     codeVal: "",
   });
 
+  const [serverStarted, setServerStarted] = useState(false)
+
   const dispatch = useDispatch();
 
   const stopServer = async () => {
@@ -47,11 +49,12 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           socket: null
         }),
       );
+      setServerStarted(false)
     } catch (err) {
       console.log(err);
     }
   };
-  //Call websocket hook to initiate use effect that initiates socket globally when isConnected is true
+
   const { socket } = useWebsocket();
   const { downloadVideo } = useReceiver();
   const { connectionInfo, isConnected, role } = useSelector(
@@ -137,6 +140,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           <QrCodeDisplay
             stopServer={stopServer}
             qrcodeVal={showQrCode.codeVal}
+            closeDisplay={()=> setShowQrCode((state)=>({...state, active: false}))}
           />
         )}
         <aside className="md:h-full w-full z-15 fixed md:sticky flex flex-col gap-2 items-center justify-center bottom-3 left-0">
@@ -146,6 +150,8 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
               setQrCode={(state) => setShowQrCode(state)}
               showQrCode={showQrCode}
               showScanner={showScanner}
+              serverStarted={serverStarted}
+              setServerStarted={()=>setServerStarted(true)}
             />
           </div>
           <ul className="space-y-3 md:h-full md:w-full w-[90%] mx-auto px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2">
@@ -190,6 +196,8 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
             setQrCode={(state) => setShowQrCode(state)}
             showQrCode={showQrCode}
             showScanner={showScanner}
+            serverStarted={serverStarted}
+            setServerStarted={()=>setServerStarted(true)}
           />
         </div>
         <section className="w-full px-3 py-5 h-full overflow-auto">

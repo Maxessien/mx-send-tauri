@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "../store";
-import { updateTransferProgress } from "../store-slices/allFilesSlice";
 import { FileRes, FileResType } from "../types";
 import { capitalise } from "../utils/file-utils";
 
@@ -10,7 +9,6 @@ const useSendFiles = () => {
     (state: RootState) => state.connection,
   );
   const appSession = useSelector((state: RootState) => state.appSession);
-  const dispatch = useDispatch();
 
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
@@ -21,28 +19,12 @@ const useSendFiles = () => {
           : "upload";
       const url = `http://${connectionInfo.ip_address}:${connectionInfo.port}/${path}`;
       if (role === "receiver") {
-        dispatch(
-          updateTransferProgress({
-            ...file,
-            sender_id: appSession,
-            current: 0,
-            total: file.file_size,
-          }),
-        );
         await invoke("send_file", {
           filePath: file.file_path,
           url,
           sessionId: connectionInfo.session_id,
           fileInfo: JSON.stringify(file),
         });
-        dispatch(
-          updateTransferProgress({
-            ...file,
-            sender_id: appSession,
-            current: file.file_size,
-            total: file.file_size,
-          }),
-        );
       } else {
         const res = await fetch(url, {
           method: "POST",
@@ -56,22 +38,8 @@ const useSendFiles = () => {
           }),
         });
         if (res.ok) {
-	console.log({
-              ...file,
-              sender_id: appSession,
-              current: 0,
-              total: file.file_size,
-            })
           const id: string = await res.text();
           socket?.emit("newFile", {file_id: id, sender_id: appSession});
-          dispatch(
-            updateTransferProgress({
-              ...file,
-              sender_id: appSession,
-              current: 0,
-              total: file.file_size,
-            }),
-          );
         }
         if (!res.ok)
           throw new Error(
