@@ -40,4 +40,5 @@ tauri-plugin-safe-area-insets-css = "0.2.0"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tauri-plugin-log = "2.8.0"
+axum-server = "0.8.0"
 

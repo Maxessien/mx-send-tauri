@@ -24,6 +24,7 @@ const useSendFiles = () => {
           url,
           sessionId: connectionInfo.session_id,
           fileInfo: JSON.stringify(file),
+          size: file.file_size
         });
       } else {
         const res = await fetch(url, {

@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { JSX, useEffect, useState } from "react";
 import { FaFile, FaImage, FaMusic, FaVideo } from "react-icons/fa";
@@ -16,6 +15,7 @@ import AppHeader from "./AppHeader";
 import AppNavItem from "./AppNavItem";
 import QrCodeDisplay from "./QrCodeDisplay";
 import QrScanner from "./QrScanner";
+import { invoke } from "@tauri-apps/api/core";
 
 export interface ScannerState {
   active: boolean;
@@ -32,13 +32,15 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     codeVal: "",
   });
 
-  const [serverStarted, setServerStarted] = useState(false)
+  const [serverStarted, setServerStarted] = useState(false);
 
   const dispatch = useDispatch();
 
   const stopServer = async () => {
+    console.log("running");
     try {
-      await invoke("disconnect_server");
+      const res = await invoke("disconnect_server");
+      console.log(res);
       setShowQrCode({ active: false, codeVal: "" });
       dispatch(
         setConnection({
@@ -46,12 +48,14 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           isConnected: false,
           role: "receiver",
           connectionInfo: { ip_address: "", port: "", session_id: "" },
-          socket: null
+          socket: null,
         }),
       );
-      setServerStarted(false)
+      setServerStarted(false);
     } catch (err) {
       console.log(err);
+    } finally {
+      console.log("ran");
     }
   };
 
@@ -66,14 +70,14 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     let unlistenTauri: UnlistenFn[] = [];
     let isMounted = true;
 
-	if (isConnected){
-	setShowQrCode({ active: false, codeVal: "" });
-	setShowScanner({ active: false, codeVal: "" });
-	}
+    if (isConnected) {
+      setShowQrCode({ active: false, codeVal: "" });
+      setShowScanner({ active: false, codeVal: "" });
+    }
 
     if (isConnected && role === "receiver" && socket) {
       socket.emit("newConnection", connectionInfo.session_id);
-      socket.on("newFile", (data: {file_id: string, sender_id: string}) => {
+      socket.on("newFile", (data: { file_id: string; sender_id: string }) => {
         downloadVideo(data.file_id, data.sender_id);
       });
       listen<DownloadProgress>("download_progress", (event) => {
@@ -140,7 +144,9 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           <QrCodeDisplay
             stopServer={stopServer}
             qrcodeVal={showQrCode.codeVal}
-            closeDisplay={()=> setShowQrCode((state)=>({...state, active: false}))}
+            closeDisplay={() =>
+              setShowQrCode((state) => ({ ...state, active: false }))
+            }
           />
         )}
         <aside className="md:h-full w-full z-15 fixed md:sticky flex flex-col gap-2 items-center justify-center bottom-3 left-0">
@@ -151,7 +157,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
               showQrCode={showQrCode}
               showScanner={showScanner}
               serverStarted={serverStarted}
-              setServerStarted={()=>setServerStarted(true)}
+              setServerStarted={() => setServerStarted(true)}
             />
           </div>
           <ul className="space-y-3 md:h-full md:w-full w-[90%] mx-auto px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2">
@@ -197,7 +203,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
             showQrCode={showQrCode}
             showScanner={showScanner}
             serverStarted={serverStarted}
-            setServerStarted={()=>setServerStarted(true)}
+            setServerStarted={() => setServerStarted(true)}
           />
         </div>
         <section className="w-full px-3 py-5 h-full overflow-auto">

@@ -3,7 +3,9 @@
 use crate::axum::AllowedFileList;
 use futures_util::lock::Mutex;
 use uuid::Uuid;
-// use async_;
+use std::net::SocketAddr;
+use axum_server::Handle;
+
 
 pub(crate) mod axum;
 pub(crate) mod commands;
@@ -29,6 +31,7 @@ pub fn run() {
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(commands::SessionId(Uuid::new_v4())))
+        .manage(Mutex::new(None::<Handle<SocketAddr>>))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

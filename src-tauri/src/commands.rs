@@ -1,8 +1,10 @@
 use async_stream::stream;
+use axum_server::Handle;
 use futures_util::{lock::Mutex, StreamExt};
 use local_ip_address::local_ip;
 use reqwest::{header, Body, ClientBuilder};
 use serde::Serialize;
+use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
@@ -49,10 +51,11 @@ pub async fn create_conn_server<'a>(
 }
 
 #[tauri::command]
-pub async fn disconnect_server() -> Result<String, String> {
-    let mut cancel = axum::CANCEL_TOKEN.write().await;
-    if let Some(token) = cancel.take() {
-        token.cancel();
+pub async fn disconnect_server(app: tauri::AppHandle) -> Result<String, String> {
+    let state = app.state::<Mutex<Option<Handle<SocketAddr>>>>();
+    let mut handle = state.lock().await;
+    if let Some(h) = handle.take(){
+        h.graceful_shutdown(Some(Duration::from_secs(1)));
     };
     Ok(String::from("Shutdown successful"))
 }
@@ -139,6 +142,7 @@ pub async fn send_file(
     session_id: String,
     app: tauri::AppHandle,
     file_info: String,
+    size: usize
 ) -> Result<String, String> {
     let mut headers = header::HeaderMap::new();
     let sess_id = format!("Bearer {}", session_id);
@@ -178,7 +182,7 @@ pub async fn send_file(
             let _ = app.emit(
                 "upload_progress",
                 ByteProgress {
-                    current: curr,
+                    current: size,
                     info: file_info.clone(),
                 },
             );
