@@ -85,7 +85,7 @@ pub async fn get_transfer_path(app: &tauri::AppHandle) -> Result<PathBuf, String
         Ok(p) => p,
         Err(_) => return Err("Failed to get app data dir".to_string()),
     };
-    create_dir_all(parent).await.map_err(|_| "Couldn't create parent dir".to_string())?;
+    create_dir_all(&parent).await.map_err(|_| "Couldn't create parent dir".to_string())?;
     let path = parent.join("transfers.json");
     if !path.exists() {
         match File::create_new(&path).await {

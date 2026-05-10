@@ -1,4 +1,4 @@
-import { AppSettings, FileRes, FileResType, List, Transfer } from "../types";
+import { AppSettings, FileRes, FileResType, FileTransferred, List, MergedHistory, Transfer } from "../types";
 
 export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
   audio: "/audio-icon.jpg",
@@ -75,6 +75,18 @@ export const sortFileList = ({direction, list, sortBy}: List) => {
   return final;
 };
 
+export const sortTransferred = (infos: FileTransferred[])=>{
+  const sorted: {[key: string]: MergedHistory} = {}
+  infos.forEach((info)=>{
+    const dateString = new Date(info.date).toLocaleDateString()
+    if (sorted[dateString]) {
+      sorted[dateString].files.push(info)
+    } else {
+      sorted[dateString] = {date: dateString, files: [info]}
+    }
+  })
+  return sorted
+}
 export const defaultSettings: AppSettings = {
   cacheTraversalResult: true,
   keepScreenAwake: true,

@@ -14,6 +14,7 @@ import { addTransferred } from "./store-slices/allFilesSlice";
 import { setSettings } from "./store-slices/settingsSlice";
 import { setWindow } from "./store-slices/windowSizeSlice";
 import { defaultSettings } from "./utils/file-utils";
+import TransferHistoryTab from "./components/tab-components/TransferHistoryTab";
 
 
 const App = () => {
@@ -73,7 +74,7 @@ const App = () => {
       }
     })()
   }, [transferred])
-  
+
   return (
     <BrowserRouter>
       <AppWrapper>
@@ -84,6 +85,7 @@ const App = () => {
           <Route path="/video" element={<VideoTab />} />
           <Route path="/image" element={<ImageTab />} />
           <Route path="/transfers" element={<TransferTab />} />
+          <Route path="/history" element={<TransferHistoryTab />} />
         </Routes>
       </AppWrapper>
       <ToastContainer

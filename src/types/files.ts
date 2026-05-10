@@ -43,3 +43,5 @@ export interface List {
   sortBy: "name" | "size";
   direction: "asc" | "desc";
 }
+
+export interface MergedHistory {date: string, files: FileTransferred[]}

@@ -6,6 +6,34 @@ import {
   FILE_PREVIEW_IMAGES,
   formatFileSize,
 } from "../../utils/file-utils";
+import { Transfer } from "../../types";
+
+export const TransferTabItem = ({ file }: { file: Omit<Transfer, "current" | "total" | "sender_id"> }) => {
+  const { file_name, file_size, type, file_type } = file;
+  return (
+    <div className="flex w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
+      <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
+        <img
+          className="object-cover object-center w-full h-full"
+          src={
+            file_type
+              ? FILE_PREVIEW_IMAGES?.[file_type]
+              : FILE_PREVIEW_IMAGES?.[type]
+          }
+          alt={`${file_type || type || 'file'} preview icon`}
+        />
+      </div>
+      <div className="space-y-2 min-w-20 flex-1">
+        <p className="sm:text-base text-sm wrap-break-word font-medium text-left">
+          {file_name}
+        </p>
+        <p className="text-sm wrap-break-word font-medium text-left">
+          {formatFileSize(file_size)}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const TransferTab = () => {
   const transferring = useSelector(
@@ -44,41 +72,19 @@ const TransferTab = () => {
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
             .map(
-              ({
+              (file) => {
+                const {
                 file_name,
                 file_path,
-                file_type,
-                file_size,
-                type,
                 current,
                 total,
-              }) => {
+              } = file
                 return (
                   <div
                     key={file_name + file_path}
                     className="relative w-full rounded-md"
                   >
-                    <div className="flex relative w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
-                      <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
-                        <img
-                          className="object-cover object-center w-full h-full"
-                          src={
-                            file_type
-                              ? FILE_PREVIEW_IMAGES?.[file_type]
-                              : FILE_PREVIEW_IMAGES?.[type]
-                          }
-                          alt="Image"
-                        />
-                      </div>
-                      <div className="space-y-2 min-w-20 flex-1">
-                        <p className="sm:text-base text-sm wrap-break-word font-medium text-left">
-                          {file_name}
-                        </p>
-                        <p className="text-sm wrap-break-word font-medium text-left">
-                          {formatFileSize(file_size)}
-                        </p>
-                      </div>
-                    </div>
+                    <TransferTabItem file={file} />
                     <div
                       style={{
                         width: `${current >= total ? "100" : (current / total) * 100}%`,
