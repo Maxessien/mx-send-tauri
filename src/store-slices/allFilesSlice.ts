@@ -3,10 +3,13 @@ import {
   AllFilesState,
   FileRes,
   FileResType,
-  FileTransfered,
+  FileTransferred,
   Transfer,
 } from "../types";
-import { determineTransfersEqual } from "../utils/file-utils";
+import {
+  determineFilesEqual,
+  determineTransfersEqual,
+} from "../utils/file-utils";
 
 const initialState: AllFilesState = {
   audio: [],
@@ -66,14 +69,16 @@ const allFiles = createSlice({
       {
         payload: { files, mode },
       }: PayloadAction<{
-        files: FileTransfered[];
+        files: FileTransferred[];
         mode?: "replace" | "append";
       }>,
     ) => {
       const m = mode || "append";
+      const cleaned = files.filter(
+        (file) => !state.transferred.some((f) => determineFilesEqual(f, file))
+      );
       state.transferred =
-        m === "replace" ? files : [...state.transferred, ...files];
-    },
+        m === "replace" ? files : [...state.transferred, ...cleaned];    },
   },
 });
 
@@ -86,5 +91,5 @@ export const {
   addSelected,
   removeSelected,
   updateTransferProgress,
-  addTransferred
+  addTransferred,
 } = allFiles.actions;

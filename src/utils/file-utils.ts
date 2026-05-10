@@ -93,4 +93,5 @@ export const defaultSettings: AppSettings = {
   organizeFilesByType: true,
   saveTransferHistory: true,
   theme: "dark",
+  extraTraversalPaths: []
 }

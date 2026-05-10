@@ -1,7 +1,8 @@
 {
   "theme": "dark",
   "organizeFilesByType": true,
-  "askBeforeReceiving": true,
+  "cacheTraversalResult": true,
   "saveTransferHistory": true,
-  "keepScreenAwake": true
+  "keepScreenAwake": true,
+  "extraTraversalPaths": []
 }

@@ -56,11 +56,13 @@ pub async fn disconnect_server(app: tauri::AppHandle) -> Result<String, String> 
 pub async fn list_files(
     app_handle: tauri::AppHandle,
     file_type: handler::FileType,
+    mut extra_paths: Vec<PathBuf>
 ) -> Result<Vec<FileRes>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let dirs = get_dirs(&app_handle);
+        extra_paths.append(&mut dirs.into());
         let mut files: Vec<FileRes> = Vec::new();
-        for dir in dirs {
+        for dir in extra_paths {
             let walker = WalkDir::new(dir);
             let entries = walker
                 .into_iter()

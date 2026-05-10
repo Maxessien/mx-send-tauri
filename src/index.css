@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root {
+body[data-theme="dark"] {
   --main-primary: rgb(30, 58, 138);
   --main-primary-light: #3b82f6; /* Blue accent matching the active tab and buttons */
   --main-primary-lighter: #60a5fa;
@@ -13,6 +13,21 @@
   --text-errors: #ef4444;
   --text-secondary: #9ca3af; /* Gray text for paths/subtitles */
   --text-secondary-light: #6b7280;
+}
+
+body[data-theme="light"] {
+  --main-primary: rgb(37, 99, 235); /* Lighter blue for better contrast */
+  --main-primary-light: #60a5fa; 
+  --main-primary-lighter: #93c5fd;
+  --main-secondary: #f3f4f6; /* Light gray background for sidebar/topbar */
+  --main-secondary-light: #ffffff; /* Main content background */
+  --main-tertiary: #ffffff; /* Background for list items/cards */
+  --main-tertiary-light: #e5e7eb; /* Borders and subtle dividers */
+  --text-primary: #111827; /* Dark gray for main text */
+  --text-primary-light: #374151;
+  --text-errors: #ef4444;
+  --text-secondary: #6b7280; /* Gray text for paths/subtitles */
+  --text-secondary-light: #9ca3af;
 }
 
 body{

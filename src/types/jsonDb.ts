@@ -7,10 +7,11 @@ export interface AppSettings {
     cacheTraversalResult: boolean,
     organizeFilesByType: boolean,
     saveTransferHistory: boolean,
-    keepScreenAwake: boolean
+    keepScreenAwake: boolean,
+    extraTraversalPaths: string[]
 }
 
 export interface FileTransferred extends FileRes {
-    date: Date,
+    date: string,
     isReceived: boolean
 }
