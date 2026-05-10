@@ -1,5 +1,11 @@
-import { createSlice } from "@reduxjs/toolkit";
-import { AllFilesState, FileRes, FileResType, Transfer } from "../types";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  AllFilesState,
+  FileRes,
+  FileResType,
+  FileTransfered,
+  Transfer,
+} from "../types";
 import { determineTransfersEqual } from "../utils/file-utils";
 
 const initialState: AllFilesState = {
@@ -9,6 +15,7 @@ const initialState: AllFilesState = {
   video: [],
   transferring: [],
   selected: [],
+  transferred: [],
 };
 
 const allFiles = createSlice({
@@ -17,32 +24,32 @@ const allFiles = createSlice({
   reducers: {
     addOneFile: (
       state,
-      { payload }: { payload: { type: FileResType; info: FileRes } },
+      { payload }: PayloadAction<{ type: FileResType; info: FileRes }>,
     ) => {
       state[payload.type].push(payload.info);
     },
     addManyFiles: (
       state,
-      { payload }: { payload: { type: FileResType; info: FileRes[] } },
+      { payload }: PayloadAction<{ type: FileResType; info: FileRes[] }>,
     ) => {
       state[payload.type] = [...state[payload.type], ...payload.info];
     },
     replaceAllFiles: (
       state,
-      { payload }: { payload: { type: FileResType; info: FileRes[] } },
+      { payload }: PayloadAction<{ type: FileResType; info: FileRes[] }>,
     ) => {
       state[payload.type] = payload.info;
     },
-    addSelected: (state, { payload }: { payload: FileRes }) => {
+    addSelected: (state, { payload }: PayloadAction<FileRes>) => {
       state.selected.push(payload);
     },
-    removeSelected: (state, { payload }: { payload: FileRes }) => {
+    removeSelected: (state, { payload }: PayloadAction<FileRes>) => {
       state.selected = state.selected.filter(
         ({ file_name, file_path }) =>
           file_name !== payload.file_name && file_path !== payload.file_path,
       );
     },
-    updateTransferProgress: (state, { payload }: { payload: Transfer }) => {
+    updateTransferProgress: (state, { payload }: PayloadAction<Transfer>) => {
       const newTransfer = payload;
       const existing = state.transferring.find((f) =>
         determineTransfersEqual(f, newTransfer),
@@ -53,6 +60,19 @@ const allFiles = createSlice({
       } else {
         state.transferring = [...state.transferring, newTransfer];
       }
+    },
+    addTransferred: (
+      state,
+      {
+        payload: { files, mode },
+      }: PayloadAction<{
+        files: FileTransfered[];
+        mode?: "replace" | "append";
+      }>,
+    ) => {
+      const m = mode || "append";
+      state.transferred =
+        m === "replace" ? files : [...state.transferred, ...files];
     },
   },
 });
@@ -66,4 +86,5 @@ export const {
   addSelected,
   removeSelected,
   updateTransferProgress,
+  addTransferred
 } = allFiles.actions;

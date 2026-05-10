@@ -4,6 +4,7 @@ import allFilesReducer from "./store-slices/allFilesSlice";
 import connectionReducer from "./store-slices/connectionSlice";
 import appSessionReducer from "./store-slices/appSession";
 import windowSizeReducer from "./store-slices/windowSizeSlice";
+import settingsReducer from "./store-slices/settingsSlice";
 
 
 const store = configureStore({
@@ -12,7 +13,8 @@ const store = configureStore({
         activeTab: activeTabReducer,
         connection: connectionReducer,
         appSession: appSessionReducer,
-        windowSize: windowSizeReducer
+        windowSize: windowSizeReducer,
+        settings: settingsReducer,
     }
 })
 

@@ -3,12 +3,12 @@ use axum_server::Handle;
 use futures_util::{lock::Mutex, StreamExt};
 use local_ip_address::local_ip;
 use reqwest::{header, Body, ClientBuilder};
-use serde::Serialize;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
-use tauri_plugin_android_external_storage::AndroidExternalStorageExt;
+use tokio::fs::{create_dir_all, write};
+use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
 use tokio_util::io::ReaderStream;
 use uuid::Uuid;
@@ -17,15 +17,7 @@ use walkdir::WalkDir;
 use crate::axum;
 use crate::file_types;
 use crate::handler;
-
-pub struct SessionId(pub Uuid);
-
-#[derive(Serialize)]
-pub struct CreateConnRes {
-    pub session_id: Uuid,
-    pub ip_address: String,
-    pub port: String,
-}
+use crate::utils::*;
 
 #[tauri::command]
 pub async fn create_conn_server<'a>(
@@ -54,41 +46,10 @@ pub async fn create_conn_server<'a>(
 pub async fn disconnect_server(app: tauri::AppHandle) -> Result<String, String> {
     let state = app.state::<Mutex<Option<Handle<SocketAddr>>>>();
     let mut handle = state.lock().await;
-    if let Some(h) = handle.take(){
+    if let Some(h) = handle.take() {
         h.graceful_shutdown(Some(Duration::from_secs(1)));
     };
     Ok(String::from("Shutdown successful"))
-}
-
-#[derive(Serialize)]
-pub struct FileRes {
-    pub file_name: String,
-    pub file_size: u64,
-    pub file_path: PathBuf,
-}
-
-#[cfg(target_os = "android")]
-fn get_dirs(_app: &tauri::AppHandle) -> [PathBuf; 4] {
-    let dirs = [
-        PathBuf::from("/storage/emulated/0/Download"),
-        PathBuf::from("/storage/emulated/0/Movies"),
-        PathBuf::from("/storage/emulated/0/Pictures"),
-        PathBuf::from("/storage/emulated/0/Music"),
-    ];
-    dirs
-}
-
-#[cfg(not(target_os = "android"))]
-fn get_dirs(app: &tauri::AppHandle) -> [PathBuf; 4] {
-    let path = app.path();
-    let home = path.home_dir().unwrap_or_else(|_| PathBuf::from("."));
-    [
-        path.download_dir()
-            .unwrap_or_else(|_| home.join("Downloads")),
-        path.video_dir().unwrap_or_else(|_| home.join("Videos")),
-        path.picture_dir().unwrap_or_else(|_| home.join("Pictures")),
-        path.audio_dir().unwrap_or_else(|_| home.join("Music")),
-    ]
 }
 
 #[tauri::command]
@@ -129,12 +90,6 @@ pub async fn list_files(
     .unwrap()
 }
 
-#[derive(Serialize, Clone)]
-pub struct ByteProgress {
-    pub current: usize,
-    pub info: String,
-}
-
 #[tauri::command]
 pub async fn send_file(
     file_path: PathBuf,
@@ -142,7 +97,7 @@ pub async fn send_file(
     session_id: String,
     app: tauri::AppHandle,
     file_info: String,
-    size: usize
+    size: usize,
 ) -> Result<String, String> {
     let mut headers = header::HeaderMap::new();
     let sess_id = format!("Bearer {}", session_id);
@@ -190,17 +145,6 @@ pub async fn send_file(
         }
         Err(_) => Err("Failed to send".to_string()),
     }
-}
-
-#[derive(Serialize, Clone)]
-pub struct DownloadProgressPayload {
-    pub file_name: String,
-    pub file_path: String,
-    pub file_size: u64,
-    pub file_type: String,
-    pub total: u64,
-    pub current: u64,
-    pub sender_id: String,
 }
 
 #[tauri::command]
@@ -377,33 +321,87 @@ pub async fn save_file(
     }
 }
 
-#[tauri::command]
-pub async fn req_file_access(app: tauri::AppHandle) -> Result<String, String> {
-    let api = app.android_external_storage();
-    let access = match api.check_all_files_access() {
-        Ok(acc) => acc,
-        Err(_) => {
-            app.exit(0);
-            return Err("Failed to check access".to_string());
-        }
+pub async fn get_settings_path(app: &tauri::AppHandle) -> Result<(PathBuf, bool), String> {
+    let mut was_created = false;
+    let path = match app.path().app_data_dir() {
+        Ok(p) => p,
+        Err(_) => return Err("Couldn't resolve app data dir".to_string()),
     };
-    if !access.is_granted {
-        let access_req = match api.request_all_files_access() {
-            Ok(acc) => acc,
-            Err(_) => {
-                app.exit(0);
-                return Err("Failed to request access".to_string());
-            }
+    let settings_path = path.join("settings.json");
+    if !settings_path.exists() {
+        match create_dir_all(&path).await {
+            Ok(_) => {}
+            Err(_) => return Err("Couldn't create settings path".to_string()),
         };
-        if !access_req.is_granted {
-            app.exit(0);
+        match File::create_new(&settings_path).await {
+            Ok(_) => was_created = true,
+            Err(_) => return Err("Couldn't create settings file".to_string()),
         };
-    };
-    Ok("Finished".to_string())
+    }
+    Ok((settings_path, was_created))
 }
 
 #[tauri::command]
-pub fn test_emit(app: tauri::AppHandle) -> Result<String, String> {
-    let _ = app.emit("download_progress", "payload");
-    Ok("Emmited".to_string())
+pub async fn save_settings(app: tauri::AppHandle, settings: String) -> Result<(), String> {
+    let settings_path = get_settings_path(&app).await?;
+
+    match write(settings_path.0, settings.as_bytes()).await {
+        Ok(_) => {}
+        Err(_) => return Err("Couldn't write to settings file".to_string()),
+    };
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_settings(
+    app: tauri::AppHandle,
+    default_settings: String,
+) -> Result<String, String> {
+    let (settings_path, was_created) = get_settings_path(&app).await?;
+    let mut settings = String::new();
+
+    if was_created {
+        match write(settings_path, default_settings.as_bytes()).await {
+            Ok(_) => {
+                settings = default_settings;
+            }
+            Err(_) => return Err("Couldn't write to settings file".to_string()),
+        };
+    } else {
+        match File::open(settings_path).await {
+            Ok(mut f) => {
+                f.read_to_string(&mut settings)
+                    .await
+                    .map_err(|_| "Couldn't read settings file".to_string())?;
+            }
+            Err(_) => return Err("Couldn't read settings file".to_string()),
+        };
+    };
+
+    Ok(settings)
+}
+
+#[tauri::command]
+pub async fn get_transferred(app: tauri::AppHandle) -> Result<String, String> {
+    let mut content = String::new();
+    let path = get_transfer_path(&app).await?;
+    match File::open(&path).await {
+        Ok(mut f) => {
+            f.read_to_string(&mut content)
+                .await
+                .map_err(|_| "Failed to read transfer file".to_string())?;
+        }
+        Err(_) => return Err("Failed to open file".to_string()),
+    };
+    Ok(content)
+}
+
+#[tauri::command]
+pub async fn save_transfer(app: tauri::AppHandle, content: String) -> Result<(), String> {
+    let path = get_transfer_path(&app).await?;
+    match write(path, content).await {
+        Ok(_) => {}
+        Err(_) => return Err("Failed to save file".to_string()),
+    };
+    Ok(())
 }

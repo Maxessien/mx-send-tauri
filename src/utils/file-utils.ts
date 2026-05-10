@@ -1,4 +1,4 @@
-import { FileRes, FileResType, List, Transfer } from "../types";
+import { AppSettings, FileRes, FileResType, List, Transfer } from "../types";
 
 export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
   audio: "/audio-icon.jpg",
@@ -74,3 +74,11 @@ export const sortFileList = ({direction, list, sortBy}: List) => {
 
   return final;
 };
+
+export const defaultSettings: AppSettings = {
+  cacheTraversalResult: true,
+  keepScreenAwake: true,
+  organizeFilesByType: true,
+  saveTransferHistory: true,
+  theme: "dark",
+}

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
@@ -10,18 +10,30 @@ import ImageTab from "./components/tab-components/ImageTab";
 import TransferTab from "./components/tab-components/TransferTab";
 import VideoTab from "./components/tab-components/VideoTab";
 import { RootState } from "./store";
+import { addTransferred } from "./store-slices/allFilesSlice";
+import { setSettings } from "./store-slices/settingsSlice";
 import { setWindow } from "./store-slices/windowSizeSlice";
+import { defaultSettings } from "./utils/file-utils";
+
 
 const App = () => {
   const dispatch = useDispatch();
   const { socket } = useSelector((state: RootState) => state.connection);
+  const settings = useSelector((state: RootState)=> state.settings)
+  const {transferred} = useSelector((state: RootState)=> state.allFiles)
+
+  const settingsInit = useRef(false)
 
   useEffect(() => {
     (async () => {
       try {
-        await invoke("req_file_access");
         await invoke("disconnect_server");
         if (socket) socket.close();
+        const sett = await invoke<string>("get_settings", {defaultSettings})
+        const trans = await invoke<string>("get_transferred")
+        dispatch(setSettings(JSON.parse(sett)))
+        dispatch(addTransferred({files: JSON.parse(trans), mode: "replace"}))
+        settingsInit.current = true
       } catch (err) {
         console.log(err);
       }
@@ -38,8 +50,30 @@ const App = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [dispatch]);
+  }, []);
 
+  useEffect(()=>{
+    if (!settingsInit.current) return
+    (async()=>{
+      try {
+        await invoke("save_settings", {settings: JSON.stringify(settings)})
+      } catch (err) {
+        console.log(err)  
+      }
+    })()
+  }, [settings])
+
+  useEffect(()=>{
+    if (!settingsInit.current) return
+    (async()=>{
+      try {
+        await invoke("save_transfer", {content: JSON.stringify(transferred)})
+      } catch (err) {
+        console.log(err)
+      }
+    })()
+  }, [transferred])
+  
   return (
     <BrowserRouter>
       <AppWrapper>

@@ -1,3 +1,5 @@
+import { FileTransferred } from "./jsonDb";
+
 export type FileResType = "audio" | "video" | "document" | "image";
 
 export interface FileRes {
@@ -33,6 +35,7 @@ export interface AllFilesState {
   image: FileRes[];
   transferring: Transfer[];
   selected: FileRes[];
+  transferred: FileTransferred[]
 }
 
 export interface List {

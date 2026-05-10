@@ -11,6 +11,7 @@ pub(crate) mod axum;
 pub(crate) mod commands;
 pub(crate) mod file_types;
 pub(crate) mod handler;
+pub mod utils;
 pub(crate) mod websocket;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -26,11 +27,13 @@ pub fn run() {
             commands::send_file,
             commands::save_file,
             commands::download_file_from_sender,
-            commands::req_file_access,
-            commands::test_emit
+            commands::save_settings,
+            commands::get_settings,
+            commands::get_transferred,
+            commands::save_transfer
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
-        .manage(Mutex::new(commands::SessionId(Uuid::new_v4())))
+        .manage(Mutex::new(utils::SessionId(Uuid::new_v4())))
         .manage(Mutex::new(None::<Handle<SocketAddr>>))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
