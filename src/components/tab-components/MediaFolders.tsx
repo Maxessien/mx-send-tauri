@@ -191,7 +191,7 @@ const MediaFolders = () => {
             })}
           </ul>
         ) : (
-          <p style={{ color: "var(--text-secondary)" }}>No folders found</p>
+          <p className="text-(--text-secondary) text-center text-xl font-semibold">No folders found</p>
         )}
       </TabLoader>
     </div>

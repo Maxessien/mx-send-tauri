@@ -8,9 +8,10 @@ const InternalStorageTab = () => {
   const [searchPar, setSearchPar] = useSearchParams();
   const { dirList, isFetching } = useGetDirList(searchPar.get("path") || "");
   const navigate = useNavigate();
+
   return (
     <div className="space-y-2">
-      <p className="w-full flex justify-start items-center gap-2">
+      {searchPar.get("path") && <p className="w-full flex justify-start items-center gap-2">
         <button
           onClick={() => navigate(-1)}
           className="text-lg font-medium flex cursor-pointer justify-center items-center"
@@ -20,12 +21,12 @@ const InternalStorageTab = () => {
           </span>{" "}
           Back
         </button>
-      </p>
+      </p>}
       <TabLoader isLoading={isFetching}>
-        {dirList.folders &&
-        dirList.folders?.length > 0 &&
-        dirList.files &&
-        dirList.files.length > 0 ? (
+        {(dirList.folders &&
+        dirList.folders?.length > 0) ||
+        (dirList.files &&
+        dirList.files.length > 0) ? (
           <ul className="space-y-1">
             {dirList.folders?.length > 0 &&
               dirList.folders.map(({ folder_name, path }) => {
@@ -41,7 +42,7 @@ const InternalStorageTab = () => {
                       onClick={() => {
                         setSearchPar({ path });
                       }}
-                      className="text-left cursor-pointer flex gap-3 justify-start items-center flex-1 px-3 py-2 transition-all rounded-md hover:bg-(--main-tertiary-light)"
+                      className="text-left cursor-pointer w-full flex gap-3 justify-start items-center flex-1 px-3 py-2 transition-all rounded-md hover:bg-(--main-tertiary-light)"
                     >
                       <span className="text-xl font-bold">
                         <FaFolder />
@@ -69,7 +70,7 @@ const InternalStorageTab = () => {
               )}
           </ul>
         ) : (
-          <p style={{ color: "var(--text-secondary)" }}>Empty folder</p>
+          <p className="text-(--text-secondary) text-center text-xl font-semibold">Empty folder</p>
         )}
       </TabLoader>
     </div>

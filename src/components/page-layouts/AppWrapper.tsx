@@ -157,7 +157,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           />
         )}
         <aside className="md:h-full w-full">
-          <ul className="md:space-y-3 md:h-full w-full md:px-3 md:py-2 overflow-x-auto md:overflow-x-hidden bg-(--main-tertiary) md:border-2 md:border-(--text-secondary-light) flex items-center md:flex-col md:items-left justify-start gap-2">
+          <ul className="md:space-y-3 md:h-full w-full md:px-3 md:py-2 overflow-x-auto scrollbar-hide md:overflow-x-hidden bg-(--main-tertiary) md:border-2 md:border-(--text-secondary-light) flex items-center md:flex-col md:items-left justify-start gap-2">
             <AppNavItem
               location="/history"
               active={location.pathname.trim() === "/history"}

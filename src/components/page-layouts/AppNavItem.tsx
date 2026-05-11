@@ -9,7 +9,7 @@ const AppNavItem = ({
 }: NavItemProps) => {
   const navigate = useNavigate()
   const listStyles = (isActive: boolean) =>
-    `md:w-full transition-all duration-200 h-max cursor-pointer p-3 w-max md:rounded-md ${isActive ? "md:text-(--main-primary) md:bg-(--main-primary-lighter) hover:bg-(--main-tertiary-light) md:hover:bg-(--main-primary-light) border-b-2 border-b-(--main-primary) md:border-2 md:border-(--main-primary)" : "hover:bg-(--main-tertiary-light)"} text-lg font-medium`;
+    `md:w-full transition-all duration-200 h-max cursor-pointer p-3 w-max md:rounded-md ${isActive ? "md:text-(--main-primary) md:bg-(--main-primary-lighter) hover:bg-(--main-tertiary-light) md:hover:bg-(--main-primary-light) border-b-2 border-b-(--main-primary) md:border-2 md:border-(--main-primary)" : "hover:bg-(--main-tertiary-light)"} text-base md:text-lg font-medium`;
   return (
     <li
       onClick={() => navigate(location)}

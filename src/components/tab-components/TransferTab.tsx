@@ -1,14 +1,20 @@
 import { useState } from "react";
+import { FaArrowLeft } from "react-icons/fa";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 import { RootState } from "../../store";
+import { Transfer } from "../../types";
 import {
   capitalise,
   FILE_PREVIEW_IMAGES,
   formatFileSize,
 } from "../../utils/file-utils";
-import { Transfer } from "../../types";
 
-export const TransferTabItem = ({ file }: { file: Omit<Transfer, "current" | "total" | "sender_id"> }) => {
+export const TransferTabItem = ({
+  file,
+}: {
+  file: Omit<Transfer, "current" | "total" | "sender_id">;
+}) => {
   const { file_name, file_size, type, file_type } = file;
   return (
     <div className="flex w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
@@ -20,7 +26,7 @@ export const TransferTabItem = ({ file }: { file: Omit<Transfer, "current" | "to
               ? FILE_PREVIEW_IMAGES?.[file_type]
               : FILE_PREVIEW_IMAGES?.[type]
           }
-          alt={`${file_type || type || 'file'} preview icon`}
+          alt={`${file_type || type || "file"} preview icon`}
         />
       </div>
       <div className="space-y-2 min-w-20 flex-1">
@@ -49,9 +55,20 @@ const TransferTab = () => {
       ? fileSessId === appSessionId
       : fileSessId !== appSessionId;
   };
+  const navigate = useNavigate();
   return (
     <section className="w-full space-y-3">
-      <h2 className="w-full text-left font-semibold text-2xl">Transfers</h2>
+      <p className="w-full flex justify-start items-center gap-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-lg font-medium flex cursor-pointer justify-center items-center"
+        >
+          <span className="mr-2">
+            <FaArrowLeft />
+          </span>{" "}
+          Back
+        </button>
+      </p>
       <div className="w-full flex gap-1">
         <button
           onClick={() => setActiveTransferTab("sending")}
@@ -71,30 +88,23 @@ const TransferTab = () => {
         0 ? (
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
-            .map(
-              (file) => {
-                const {
-                file_name,
-                file_path,
-                current,
-                total,
-              } = file
-                return (
+            .map((file) => {
+              const { file_name, file_path, current, total } = file;
+              return (
+                <div
+                  key={file_name + file_path}
+                  className="relative w-full rounded-md"
+                >
+                  <TransferTabItem file={file} />
                   <div
-                    key={file_name + file_path}
-                    className="relative w-full rounded-md"
-                  >
-                    <TransferTabItem file={file} />
-                    <div
-                      style={{
-                        width: `${current >= total ? "100" : (current / total) * 100}%`,
-                      }}
-                      className="absolute bg-[rgb(30,58,138,0.3)] h-full top-0 left-0"
-                    ></div>
-                  </div>
-                );
-              },
-            )
+                    style={{
+                      width: `${current >= total ? "100" : (current / total) * 100}%`,
+                    }}
+                    className="absolute bg-[rgb(30,58,138,0.3)] h-full top-0 left-0"
+                  ></div>
+                </div>
+              );
+            })
         ) : (
           <p className="w-full text-center font-semibold text-2xl py-4">
             No Files{` ${capitalise(activeTransferTab)}`}
