@@ -23,7 +23,8 @@ pub const IMAGE_EXTS: &[&str] = &["jpg", "jpeg", "png", "gif", "webp"];
 
 pub const DOCUMENT_EXTS: &[&str] = &[
     "pdf", "doc", "docx", "txt", "rtf", "odt", "pages", "wpd", "tex", "epub", "mobi", "azw",
-    "azw3", "csv", "xls", "xlsx", "ods", "ppt", "pptx", "odp",
+    "azw3", "csv", "xls", "xlsx", "ods", "ppt", "pptx", "odp", "js", "py", "exe", "msi",
+	"apk", "adb",
 ];
 
 pub fn folder_name(file_type: &FileType) -> &'static str {
@@ -35,6 +36,17 @@ pub fn folder_name(file_type: &FileType) -> &'static str {
     }
 }
 
+pub fn get_file_type(ext: &str) -> &'static str {
+    if IMAGE_EXTS.contains(&ext) {
+        "image"
+    } else if VIDEO_EXTS.contains(&ext) {
+        "video"
+    } else if AUDIO_EXTS.contains(&ext) {
+        "audio"
+    } else {
+        "document"
+    }
+}
 pub fn extensions_for(file_type: &FileType) -> Option<&'static [&'static str]> {
     match file_type {
         FileType::Audio => Some(AUDIO_EXTS),

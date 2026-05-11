@@ -14,6 +14,15 @@ export interface FolderRes {
   path: string
 }
 
+export interface DirListFile extends Omit<FileRes, "type">{
+  file_type: FileResType
+}
+
+export interface DirList {
+  folders: FolderRes[],
+  files: DirListFile[]
+}
+
 export interface DownloadProgress extends Omit<FileRes, "type"> {
   file_type: FileResType;
   current: number;

@@ -15,7 +15,7 @@ use uuid::Uuid;
 use walkdir::WalkDir;
 
 use crate::axum;
-use crate::file_types;
+use crate::file_types::{self, get_file_type};
 use crate::handler;
 use crate::utils::*;
 
@@ -409,26 +409,67 @@ pub async fn save_transfer(app: tauri::AppHandle, content: String) -> Result<(),
 }
 
 #[tauri::command]
-pub async fn list_folders(
+pub async fn list_dir(
     app: tauri::AppHandle,
     dir: Option<PathBuf>,
-) -> Result<Vec<FolderRes>, String> {
+    include_files: Option<bool>,
+) -> Result<DirList, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let path = match dir {
             Some(p) => p,
             None => get_home_dir(&app),
+        };
+        let show_file = match include_files {
+            Some(b) => b,
+            None => false,
+        };
+        let mut dir_list = DirList {
+            folders: Vec::new(),
+            files: Vec::new(),
         };
         let entries = WalkDir::new(path)
             .min_depth(1)
             .max_depth(1)
             .into_iter()
             .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_dir())
-            .map(|e| FolderRes {
-                folder_name: e.file_name().to_string_lossy().into_owned(),
-                path: e.path().into(),
-            })
-            .collect::<Vec<FolderRes>>();
-        Ok(entries)
-    }).await.map_err(|_| "Thread operation failed".to_string())?
+            .filter(|e| {
+                if show_file {
+                    true
+                } else {
+                    e.file_type().is_dir()
+                }
+            });
+        for e in entries {
+            if e.file_type().is_dir() {
+                let folder = FolderRes {
+                    folder_name: e.file_name().to_string_lossy().into_owned(),
+                    path: e.path().into(),
+                };
+                dir_list.folders.push(folder);
+            } else if show_file && e.file_type().is_file() {
+                let size = match e.metadata() {
+                    Ok(meta) => meta.len(),
+                    Err(_) => continue,
+                };
+                let clone = e.clone();
+                let ext = match clone.path().extension() {
+                    Some(str)=> match str.to_str() {
+                        Some(s)=>s,
+                        None=> continue
+                    },
+                    None => continue
+                };
+                let file = FileResWithType {
+                    file_name: e.file_name().to_string_lossy().into_owned(),
+                    file_path: e.into_path(),
+                    file_size: size,
+                    file_type: get_file_type(ext).to_owned()
+                };
+                dir_list.files.push(file);
+            };
+        }
+        Ok(dir_list)
+    })
+    .await
+    .map_err(|e| format!("Thread operation failed: {}", e))?
 }

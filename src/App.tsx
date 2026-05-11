@@ -7,6 +7,7 @@ import AppWrapper from "./components/page-layouts/AppWrapper";
 import AudioTab from "./components/tab-components/AudioTab";
 import DocumentTab from "./components/tab-components/DocumentTab";
 import ImageTab from "./components/tab-components/ImageTab";
+import InternalStorageTab from "./components/tab-components/InternalStorageTab";
 import MediaFolders from './components/tab-components/MediaFolders';
 import SettingsTab from "./components/tab-components/SettingsTab";
 import TransferHistoryTab from "./components/tab-components/TransferHistoryTab";
@@ -35,7 +36,6 @@ const App = () => {
         if (socket) socket.close();
         const sett = await invoke<string>("get_settings", { defaultSettings: JSON.stringify(defaultSettings) });
         const trans = await invoke<string>("get_transferred");
-        console.log(trans, "yyey")
         dispatch(setSettings(JSON.parse(sett)));
         dispatch(addTransferred({ files: trans ? JSON.parse(trans) : [], mode: "replace" }));
         settingsInit.current = true;
@@ -137,6 +137,7 @@ const App = () => {
           <Route path="/settings" element={<SettingsTab />} />
           <Route path="/history" element={<TransferHistoryTab />} />
           <Route path="/media" element={<MediaFolders />} />
+          <Route path="/storage" element={<InternalStorageTab />} />
         </Routes>
       </AppWrapper>
       <ToastContainer

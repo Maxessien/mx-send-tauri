@@ -6,21 +6,21 @@ import {
   pictureDir,
   videoDir,
 } from "@tauri-apps/api/path";
-import {} from "@tauri-apps/plugin-fs";
 import { useEffect, useState } from "react";
+import { FaArrowLeft } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "react-toastify";
 import { RootState } from "../../store";
 import { setSettings } from "../../store-slices/settingsSlice";
-import { FolderRes } from "../../types";
+import { DirList } from "../../types";
 
 const getFolders = async (dir: string | null) => {
   try {
-    const folders = await invoke<FolderRes[]>("list_folders", {
+    const dirList = await invoke<DirList>("list_dir", {
       dir: dir && dir.trim().length > 0 ? dir : undefined,
     });
-    return folders;
+    return dirList.folders;
   } catch (err) {
     console.log(err);
     throw err;
@@ -81,28 +81,25 @@ const MediaFolders = () => {
     dispatch(setSettings({ ...settings, extraTraversalPaths: paths }));
   };
 
-  const deselectParent = () => {
-    const parent = searchParams.get("path");
-    if (!parent || !data || !extraTraversalPaths.includes(parent)) return;
-    const childDeselected = data.some(({ path }) =>
-      extraTraversalPaths.includes(path),
-    );
-    if (childDeselected)
-      setTrPaths(extraTraversalPaths.filter((p) => p !== parent));
-  };
-
   const handleSelection = (path: string) => {
     if (!data || defaultDirs.includes(path)) return;
     const parent = searchParams.get("path");
-    if (!parent) return;
+    if (!parent) {
+      // If no parent it is in the home dir
+      !extraTraversalPaths.includes(path)
+        ? setTrPaths([...extraTraversalPaths, path])
+        : setTrPaths(extraTraversalPaths.filter((p) => p !== path));
+      return;
+    }
     const parentSelected = extraTraversalPaths.includes(parent);
     const isSelected = extraTraversalPaths.includes(path) || parentSelected;
     if (isSelected) {
-      if (parentSelected)
+      if (parentSelected){
         setTrPaths([
-          ...extraTraversalPaths,
+          ...extraTraversalPaths.filter((p)=> p !== parent),
           ...data.filter((p) => p.path !== path).map(({ path }) => path),
         ]);
+      }
       else
         setTrPaths(
           data
@@ -111,7 +108,6 @@ const MediaFolders = () => {
             )
             .map(({ path }) => path),
         );
-      deselectParent();
     } else {
       const allChildrenPaths = data.map((p) => p.path);
       const allChildrenSelected = data
@@ -126,8 +122,21 @@ const MediaFolders = () => {
     }
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-2">
+      <p className="w-full flex justify-start items-center gap-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-lg font-medium flex cursor-pointer justify-center items-center"
+        >
+          <span className="mr-2">
+            <FaArrowLeft />
+          </span>{" "}
+          Back
+        </button>
+      </p>
       {isFetching ? (
         <p style={{ color: "var(--text-secondary)" }}>Loading...</p>
       ) : data && data?.length > 0 ? (
@@ -137,7 +146,8 @@ const MediaFolders = () => {
             const selected =
               extraTraversalPaths.includes(path) ||
               (parent && extraTraversalPaths.includes(parent)) ||
-              defaultDirs.includes(path)
+              defaultDirs.includes(path);
+
             return (
               <li
                 key={path}
@@ -147,16 +157,16 @@ const MediaFolders = () => {
                   border: "1px solid var(--main-tertiary-light)",
                 }}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full">
                   <button
                     aria-pressed={selected}
                     aria-label={selected ? "Deselect folder" : "Select folder"}
                     onClick={() => handleSelection(path)}
-                    className="flex items-center w-9 h-9 justify-center rounded-md"
+                    className={`flex border-2 cursor-pointer border-(--text-primary) items-center w-6 h-6 justify-center rounded-full`}
                     disabled={defaultDirs.includes(path)}
                   >
                     {selected && (
-                      <span className="w-full h-full bg-(--main-primary) rounded-md" />
+                      <span className="w-full h-full bg-(--main-primary) rounded-full" />
                     )}
                   </button>
 
@@ -168,32 +178,11 @@ const MediaFolders = () => {
                       }
                       setSearchParams({ path });
                     }}
-                    className="text-left"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                    }}
+                    className="text-left cursor-pointer flex-1 px-3 py-2 transition-all rounded-[0px_6px_6px_0px] hover:bg-(--main-tertiary-light)"
                     disabled={defaultDirs.includes(path)}
                   >
-                    <p
-                      style={{
-                        margin: 0,
-                        color: "var(--text-primary)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {folder_name}
-                    </p>
-                    <small
-                      style={{
-                        color: "var(--text-secondary)",
-                        display: "block",
-                      }}
-                    >
-                      {path}
-                    </small>
+                    <p className="m-0 font-medium">{folder_name}</p>
+                    <small className="block">{path}</small>
                   </button>
                 </div>
               </li>

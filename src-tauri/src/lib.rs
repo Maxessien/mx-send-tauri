@@ -32,7 +32,7 @@ pub fn run() {
             commands::get_settings,
             commands::get_transferred,
             commands::save_transfer,
-            commands::list_folders
+            commands::list_dir
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(utils::SessionId(Uuid::new_v4())))

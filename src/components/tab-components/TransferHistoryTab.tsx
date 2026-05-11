@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaArrowLeft } from "react-icons/fa";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router";
 import { RootState } from "../../store";
 import { MergedHistory } from "../../types";
 import { sortTransferred } from "../../utils/file-utils";
@@ -34,13 +32,9 @@ const TransferHistoryTab = () => {
     })();
   }, [transferred]);
 
-  const navigate = useNavigate()
 
   return (
     <section className="w-full space-y-3">
-      <p className="w-full flex justify-start items-center gap-2">
-        <button onClick={()=> navigate("/settings")} className="text-lg font-medium flex cursor-pointer justify-center items-center"><span className="mr-2"><FaArrowLeft /></span> Back</button>
-      </p>
       <h2 className="w-full text-left font-semibold text-2xl">History</h2>
       <div className="w-full flex gap-1">
         <button

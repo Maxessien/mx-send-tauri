@@ -2,8 +2,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { JSX, useEffect, useState } from "react";
 import {
+  FaClock,
   FaCog,
   FaFile,
+  FaFolder,
   FaImage,
   FaMusic,
   FaVideo
@@ -144,7 +146,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           closeScanner={() => setShowScanner({ active: false, codeVal: "" })}
         />
       )}
-      <main className="w-full h-[calc(100vh-68px)] flex flex-col-reverse md:grid md:grid-cols-[25%_75%]">
+      <main className="w-full h-[calc(100vh-68px)] flex flex-col md:grid md:grid-cols-[25%_75%]">
         {showQrCode.active && (
           <QrCodeDisplay
             stopServer={stopServer}
@@ -155,7 +157,13 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           />
         )}
         <aside className="md:h-full w-full">
-          <ul className="space-y-3 md:h-full md:w-full w-[90%] mx-auto px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2">
+          <ul className="md:space-y-3 md:h-full w-full md:px-3 md:py-2 overflow-x-auto md:overflow-x-hidden bg-(--main-tertiary) md:border-2 md:border-(--text-secondary-light) flex items-center md:flex-col md:items-left justify-start gap-2">
+            <AppNavItem
+              location="/history"
+              active={location.pathname.trim() === "/history"}
+              icon={<FaClock />}
+              title="Transfer History"
+            />
             <AppNavItem
               location="/audio"
               active={
@@ -184,8 +192,14 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
               title="Document"
             />
             <AppNavItem
+              location="/storage"
+              active={location.pathname.trim() === "/storage"}
+              icon={<FaFolder />}
+              title="Internal Storage"
+            />
+            <AppNavItem
               location="/settings"
-              active={location.pathname.trim() === "/settings" || location.pathname.trim() === "/history"}
+              active={location.pathname.trim() === "/settings"}
               icon={<FaCog />}
               title="Settings"
             />

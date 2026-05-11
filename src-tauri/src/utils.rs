@@ -21,9 +21,23 @@ pub struct FileRes {
 }
 
 #[derive(Serialize)]
+pub struct FileResWithType {
+    pub file_name: String,
+    pub file_size: u64,
+    pub file_path: PathBuf,
+    pub file_type: String
+}
+
+#[derive(Serialize)]
 pub struct FolderRes {
     pub folder_name: String,
     pub path: PathBuf
+}
+
+#[derive(Serialize)]
+pub struct DirList {
+    pub folders: Vec<FolderRes>,
+    pub files: Vec<FileResWithType>
 }
 
 #[cfg(target_os = "android")]

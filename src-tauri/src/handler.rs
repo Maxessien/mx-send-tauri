@@ -41,6 +41,7 @@ pub struct DownloadErrResponse {
 
 #[derive(Clone)]
 #[derive(Deserialize)]
+#[derive(Serialize)]
 pub enum FileType {
     Audio,
     Video,

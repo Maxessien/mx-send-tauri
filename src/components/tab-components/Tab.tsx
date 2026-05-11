@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
+import { FaArrowsRotate } from "react-icons/fa6";
 import { MdFilterList } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useGetFiles } from "../../hooks/useGetFiles";
@@ -75,10 +76,16 @@ const Tab = ({
 
   return (
     <section className="w-full space-y-3">
-      <header className="flex justify-start md:items-center">
-        <h2 className="font-semibold w-full md:w-max text-center text-2xl">
+      <header className="flex justify-between md:items-center">
+        <h2 className="font-semibold md:w-max text-center text-2xl">
           {tabTitle}
         </h2>
+        <Button attrs={{onClick: ()=> query.refetch()}} rounded="rounded-md" size={width >= 640 ? "medium" : "small"} color="primary">
+          <span>
+            <FaArrowsRotate />
+          </span>
+          <span className="hidden sm:inline">Refresh</span>
+        </Button>      
       </header>
       <div className="w-full relative flex gap-2 justify-between items-center">
         <div className="relative w-full max-w-120">
@@ -95,7 +102,7 @@ const Tab = ({
           <span>
             <MdFilterList size={22} />
           </span>
-          <span className="hidden sm:inline">{selectedMapping.text}</span>
+          <span className="hidden w-max sm:inline">{selectedMapping.text}</span>
         </Button>
         {showFilters && <div className="absolute z-99 flex flex-col gap-2 rounded-md bg-(--main-tertiary) border border-(--text-primary) p-1 top-[calc(100%+10px)] right-0">
           {mappings.map((mapping) => {
@@ -106,6 +113,7 @@ const Tab = ({
                 onClick={() =>{
                   setActions((state) => ({ ...state, direction, sortBy }))
                   setSelectedMapping(mapping)
+                  setShowFilters(false)
                 }}
               >
                 {text}

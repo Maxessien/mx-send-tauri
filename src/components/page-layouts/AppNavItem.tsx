@@ -9,14 +9,13 @@ const AppNavItem = ({
 }: NavItemProps) => {
   const navigate = useNavigate()
   const listStyles = (isActive: boolean) =>
-    `md:w-full transition-all duration-200 h-max cursor-pointer p-3 w-max rounded-full md:rounded-md ${isActive ? "text-(--main-primary) bg-(--main-primary-lighter) hover:bg-(--main-primary-light) border-2 border-(--main-primary)" : "hover:bg-(--main-tertiary-light)"} text-lg font-medium`;
+    `md:w-full transition-all duration-200 h-max cursor-pointer p-3 w-max md:rounded-md ${isActive ? "md:text-(--main-primary) md:bg-(--main-primary-lighter) hover:bg-(--main-tertiary-light) md:hover:bg-(--main-primary-light) border-b-2 border-b-(--main-primary) md:border-2 md:border-(--main-primary)" : "hover:bg-(--main-tertiary-light)"} text-lg font-medium`;
   return (
     <li
       onClick={() => navigate(location)}
       className={listStyles(active)}
     >
-      <span className="flex items-center justify-center md:hidden">{icon}</span>
-      <span className="hidden md:flex md:justify-start items-center gap-2 w-full">
+      <span className="flex w-max md:w-full justify-center md:justify-start items-center gap-2">
         <span>{icon}</span> <span>{title}</span>
       </span>
     </li>
