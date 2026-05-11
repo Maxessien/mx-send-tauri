@@ -20,6 +20,12 @@ pub struct FileRes {
     pub file_path: PathBuf,
 }
 
+#[derive(Serialize)]
+pub struct FolderRes {
+    pub folder_name: String,
+    pub path: PathBuf
+}
+
 #[cfg(target_os = "android")]
 pub fn get_dirs(_app: &tauri::AppHandle) -> [PathBuf; 4] {
     let dirs = [
@@ -29,6 +35,16 @@ pub fn get_dirs(_app: &tauri::AppHandle) -> [PathBuf; 4] {
         PathBuf::from("/storage/emulated/0/Music"),
     ];
     dirs
+}
+
+#[cfg(target_os = "android")]
+pub fn get_home_dir(_app: &tauri::AppHandle)-> PathBuf {
+    PathBuf::from("/storage/emulated/0")
+}
+
+#[cfg(not(target_os = "android"))]
+pub fn get_home_dir(app: &tauri::AppHandle)-> PathBuf {
+    app.path().home_dir().unwrap_or_else(|_| PathBuf::from("."))
 }
 
 #[cfg(not(target_os = "android"))]

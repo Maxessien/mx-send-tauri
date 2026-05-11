@@ -9,6 +9,11 @@ export interface FileRes {
   type: FileResType;
 }
 
+export interface FolderRes {
+  folder_name: string,
+  path: string
+}
+
 export interface DownloadProgress extends Omit<FileRes, "type"> {
   file_type: FileResType;
   current: number;

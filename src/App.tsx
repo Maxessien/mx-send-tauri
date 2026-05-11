@@ -7,15 +7,15 @@ import AppWrapper from "./components/page-layouts/AppWrapper";
 import AudioTab from "./components/tab-components/AudioTab";
 import DocumentTab from "./components/tab-components/DocumentTab";
 import ImageTab from "./components/tab-components/ImageTab";
+import SettingsTab from "./components/tab-components/SettingsTab";
+import TransferHistoryTab from "./components/tab-components/TransferHistoryTab";
 import TransferTab from "./components/tab-components/TransferTab";
 import VideoTab from "./components/tab-components/VideoTab";
 import { RootState } from "./store";
 import { addTransferred } from "./store-slices/allFilesSlice";
 import { setSettings } from "./store-slices/settingsSlice";
 import { setWindow } from "./store-slices/windowSizeSlice";
-import { defaultSettings } from "./utils/file-utils";
-import TransferHistoryTab from "./components/tab-components/TransferHistoryTab";
-import SettingsTab from "./components/tab-components/SettingsTab";
+import { defaultSettings, determineFilesEqual } from "./utils/file-utils";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -58,13 +58,15 @@ const App = () => {
 
   useEffect(() => {
     if (!settingsInit.current) return;
-    (async () => {
+    const timeout = setTimeout(async () => {
       try {
         await invoke("save_settings", { settings: JSON.stringify(settings) });
       } catch (err) {
         console.log(err);
       }
-    })();
+    }, 3000);
+
+    return ()=> clearTimeout(timeout)
   }, [settings]);
 
   useEffect(() => {
@@ -75,15 +77,15 @@ const App = () => {
       } catch (err) {
         console.log(err);
       }
-    })();
+    })();  
   }, [transferred]);
 
   useEffect(() => {
     (() => {
       const completed = transferring.filter(
         ({ current, total }) => current >= total,
-      );
-      dispatch(
+      ).filter((file) => !transferred.some((f) => determineFilesEqual(f, file)));      
+      if (completed.length > 0) dispatch(
         addTransferred({
           files: completed.map(
             ({ file_name, file_path, file_size, type, sender_id }) => ({

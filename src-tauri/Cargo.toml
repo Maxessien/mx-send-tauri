@@ -35,4 +35,5 @@ async-stream = "0.3.6"
 tauri-plugin-android-external-storage = "0.1.0"
 tauri-plugin-safe-area-insets-css = "0.2.0"
 axum-server = "0.8.0"
+tauri-plugin-fs = "2.5.1"
 

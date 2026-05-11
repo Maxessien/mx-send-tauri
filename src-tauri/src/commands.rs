@@ -56,7 +56,7 @@ pub async fn disconnect_server(app: tauri::AppHandle) -> Result<String, String> 
 pub async fn list_files(
     app_handle: tauri::AppHandle,
     file_type: handler::FileType,
-    mut extra_paths: Vec<PathBuf>
+    mut extra_paths: Vec<PathBuf>,
 ) -> Result<Vec<FileRes>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let dirs = get_dirs(&app_handle);
@@ -406,4 +406,29 @@ pub async fn save_transfer(app: tauri::AppHandle, content: String) -> Result<(),
         Err(_) => return Err("Failed to save file".to_string()),
     };
     Ok(())
+}
+
+#[tauri::command]
+pub async fn list_folders(
+    app: tauri::AppHandle,
+    dir: Option<PathBuf>,
+) -> Result<Vec<FolderRes>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let path = match dir {
+            Some(p) => p,
+            None => get_home_dir(&app),
+        };
+        let entries = WalkDir::new(path)
+            .min_depth(1)
+            .max_depth(1)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_dir())
+            .map(|e| FolderRes {
+                folder_name: e.file_name().to_string_lossy().into_owned(),
+                path: e.path().into(),
+            })
+            .collect::<Vec<FolderRes>>();
+        Ok(entries)
+    }).await.map_err(|_| "Thread operation failed".to_string())?
 }

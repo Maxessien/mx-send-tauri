@@ -11,6 +11,7 @@ import { getRustFileType } from "../utils/file-utils";
 const useGetFiles = (fileType: FileResType, queryOptions?: UndefinedInitialDataOptions<FileRes[], Error, FileRes[], ActiveTab[]>) => {
   const dispatch = useDispatch();
   const transferring = useSelector((state: RootState) => state.allFiles.transferring);
+  const {extraTraversalPaths} = useSelector((state: RootState)=> state.settings)
 
   const getFiles = async (type: FileResType) => {
     const rustEnum = getRustFileType(type);
@@ -18,6 +19,7 @@ const useGetFiles = (fileType: FileResType, queryOptions?: UndefinedInitialDataO
     try {
       const files = await invoke<FileRes[]>("list_files", {
         fileType: rustEnum,
+        extraPaths: extraTraversalPaths
       });
       const filesWithTypes = files.map((file) => ({ ...file, type }))
       dispatch(

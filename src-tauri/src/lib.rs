@@ -20,6 +20,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_android_external_storage::init())
         .plugin(tauri_plugin_safe_area_insets_css::init())
+        .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             commands::create_conn_server,
             commands::disconnect_server,
@@ -30,7 +31,8 @@ pub fn run() {
             commands::save_settings,
             commands::get_settings,
             commands::get_transferred,
-            commands::save_transfer
+            commands::save_transfer,
+            commands::list_folders
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(utils::SessionId(Uuid::new_v4())))

@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import Button from "./Button";
+import { motion } from 'framer-motion';
 
 export const Card = ({
   children,
@@ -67,7 +68,7 @@ export const WarningPopup = ({
 }) => {
   return (
     <div className="fixed z-99999 top-0 flex justify-center items-center left-0 w-full h-full bg-[rgba(0,0,0,0.37)]">
-      <div className="px-3 rounded-md border-2 border-(--text-primary-light) bg-(--main-secondary-light) py-2">
+      <motion.div initial={{scale: 0.6}} animate={{scale: [1.02, 1]}} transition={{duration: 0.5, ease: "easeOut"}} className="px-3 rounded-md border-2 border-(--text-primary-light) bg-(--main-secondary-light) py-2">
         <p className="w-full text-lg font-medium mb-4">{warnMessage}</p>
         <div className="flex w-full justify-center items-center">
           <Button
@@ -87,7 +88,7 @@ export const WarningPopup = ({
             Cancel
           </Button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
