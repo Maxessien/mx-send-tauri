@@ -1,7 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
-import { FaConnectdevelop } from "react-icons/fa";
+import { FaExchangeAlt } from "react-icons/fa";
+import { TbDevices2 } from "react-icons/tb";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import useSendFiles from "../../hooks/useSendFiles";
 import { RootState } from "../../store";
@@ -77,15 +79,27 @@ const ActionBtns = ({
     }
   };
 
+  const navigate = useNavigate()
+  const location = useLocation();
+
   return (
     <div>
-      {serverStarted && <div className="w-full flex justify-start mb-2">
+      {serverStarted && <div className="w-full flex justify-center items-center gap-2 py-2">
         <Button
           attrs={{ onClick: ()=>setQrCode({active: true, codeVal: showQrCode.codeVal}) }}
           usePredefinedSize={false}
           className="p-5 text-lg"
+          color="tertiary"
         >
-          <FaConnectdevelop />
+          <TbDevices2 size={20} />
+        </Button>
+        <Button
+          attrs={{ onClick: ()=> navigate("/transfers")}}
+          usePredefinedSize={false}
+          className="p-5 text-lg"
+          color={location.pathname.trim()==="/transfers" ? "primary" : "tertiary"}
+        >
+          <FaExchangeAlt size={20} />
         </Button>
       </div>}
       <div className="flex w-full gap-2 px-3 items-center">

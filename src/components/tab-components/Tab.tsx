@@ -1,14 +1,27 @@
 import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
+import { MdFilterList } from "react-icons/md";
+import { useSelector } from "react-redux";
 import { useGetFiles } from "../../hooks/useGetFiles";
+import { RootState } from "../../store";
 import { FileRes, FileResType, List } from "../../types";
 import { sortFileList } from "../../utils/file-utils";
+import Button from "../reusable-components/Button";
 import TabFilesWrapper from "./TabFilesWrapper";
 import TabLoader from "./TabLoader";
 
 interface Actions extends Omit<List, "list"> {
   search: string;
 }
+
+interface Mappings extends Pick<List, "direction" | "sortBy"> {
+  text: string;
+}
+
+const checkMappingsEqual = (mapping1: Mappings, mapping2: Mappings) =>
+  mapping1.direction === mapping1.direction &&
+  mapping1.sortBy === mapping2.sortBy &&
+  mapping1.text === mapping2.text;
 
 const Tab = ({
   tabType,
@@ -24,10 +37,19 @@ const Tab = ({
     sortBy: "name",
     search: "",
   });
+  const {width} = useSelector((state: RootState)=> state.windowSize)
+
+  const mappings: Mappings[] = [
+    { direction: "asc", sortBy: "name", text: "A-Z" },
+    { direction: "desc", sortBy: "name", text: "Z-A" },
+    { direction: "desc", sortBy: "size", text: "Largest First" },
+    { direction: "asc", sortBy: "size", text: "Smallest First" },
+  ];
+  const [selectedMapping, setSelectedMapping] = useState<Mappings>(mappings[0]);
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     if (!query.data) return;
-
 
     const hasSearch = actions.search.trim();
 
@@ -36,7 +58,9 @@ const Tab = ({
       list: hasSearch
         ? query.data.filter(
             ({ file_name }) =>
-              file_name.toLowerCase().startsWith(actions.search.toLowerCase()) ||
+              file_name
+                .toLowerCase()
+                .startsWith(actions.search.toLowerCase()) ||
               file_name.toLowerCase().includes(actions.search.toLowerCase()),
           )
         : query.data,
@@ -51,59 +75,44 @@ const Tab = ({
 
   return (
     <section className="w-full space-y-3">
-      <header className="flex justify-start md:justify-between md:items-center gap-2 flex-col md:flex-row">
+      <header className="flex justify-start md:items-center">
         <h2 className="font-semibold w-full md:w-max text-center text-2xl">
           {tabTitle}
         </h2>
-        <div>
-          <p className="w-full text-center font-medium text-lg mb-2">Sort</p>
-          <div className="flex justify-center items-center gap-2 font-medium text-md">
-            <select
-              className="rounded-md bg-(--main-tertiary-light) px-3 py-1"
-              name="sortBy"
-              id="sort_by_select"
-              onChange={(e) => {
-                const allowed = ["name", "size"];
-                const val = e.target.value as "name" | "size";
-                if (!allowed.includes(val)) return;
-                setActions((state) => ({ ...state, sortBy: val }));
-              }}
-            >
-              <option value="name">Name</option>
-              <option value="size">Size</option>
-            </select>
-            <select
-              className="rounded-md bg-(--main-tertiary-light) px-3 py-1"
-              name="direction"
-              id="direction_select"
-              onChange={(e) => {
-                const allowed = ["asc", "desc"];
-                const val = e.target.value as "asc" | "desc";
-                if (!allowed.includes(val)) return;
-                setActions((state) => ({ ...state, direction: val }));
-              }}
-            >
-              <option value="asc">Asc</option>
-              <option value="desc">Desc</option>
-            </select>
-          </div>
-        </div>
       </header>
-      <div className="w-full flex justify-end items-center">
-        <div
-          className="relative w-full max-w-120"
-        >
+      <div className="w-full relative flex gap-2 justify-between items-center">
+        <div className="relative w-full max-w-120">
           <input
-            onChange={(e)=>submitSearch({searchQuery: e.target.value})}
+            onChange={(e) => submitSearch({ searchQuery: e.target.value })}
             className="w-full rounded-md bg-(--main-tertiary-light) px-3 py-2 pr-9"
             type="text"
           />
-          <button
-            className="p-3 text-md absolute top-1/2 right-2 -translate-y-1/2"
-          >
+          <button className="text-md absolute top-1/2 right-2 -translate-y-1/2">
             <FaSearch />
           </button>
         </div>
+        <Button attrs={{onClick: ()=> setShowFilters(!showFilters)}} rounded="rounded-md" size={width > 480 ? "medium" : "small"} color="primary">
+          <span>
+            <MdFilterList size={22} />
+          </span>
+          <span className="hidden sm:inline">{selectedMapping.text}</span>
+        </Button>
+        {showFilters && <div className="absolute z-99 flex flex-col gap-2 rounded-md bg-(--main-tertiary) border border-(--text-primary) p-1 top-[calc(100%+10px)] right-0">
+          {mappings.map((mapping) => {
+            const { direction, sortBy, text } = mapping;
+            return (
+              <button
+                className={`w-full px-3 py-2 cursor-pointer ${checkMappingsEqual(mapping, selectedMapping) ? "bg-(--main-primary) hover:bg-(--main-primary-light)" : "hover:bg-(--main-tertiary-light)"} rounded-md`}
+                onClick={() =>{
+                  setActions((state) => ({ ...state, direction, sortBy }))
+                  setSelectedMapping(mapping)
+                }}
+              >
+                {text}
+              </button>
+            );
+          })}
+        </div>}
       </div>
       <TabLoader isLoading={query.isFetching}>
         <TabFilesWrapper files={list ?? []} />

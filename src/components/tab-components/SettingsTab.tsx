@@ -1,15 +1,16 @@
+import { useState } from "react";
+import { FaArrowRight, FaClock, FaTrash } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from 'react-router';
+import { RootState } from "../../store";
+import { addTransferred } from "../../store-slices/allFilesSlice";
+import { setSettings } from "../../store-slices/settingsSlice";
+import Button from "../reusable-components/Button";
 import {
   Card,
   ToggleItem,
   WarningPopup,
 } from "../reusable-components/SettingsReusable";
-import { RootState } from "../../store";
-import { setSettings } from "../../store-slices/settingsSlice";
-import Button from "../reusable-components/Button";
-import { FaTrash } from "react-icons/fa";
-import { useState } from "react";
-import { addTransferred } from "../../store-slices/allFilesSlice";
 
 const SettingsTab = () => {
   const dispatch = useDispatch();
@@ -22,10 +23,11 @@ const SettingsTab = () => {
     acceptFn: () => {},
     message: "",
   });
+  const navigate = useNavigate()
   return (
     <section className="w-full space-y-3">
       <h2 className="w-full text-left font-semibold text-2xl">Settings</h2>
-      <Card>
+      <Card extraClassNames="grid gap-2 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         <ToggleItem
           title="Save Transfer History"
           subTitle="Keep a log of all your sent and received files"
@@ -104,26 +106,42 @@ const SettingsTab = () => {
         />
       )}
 
-      <Button
-        attrs={{
-          onClick: () => {
-            setPopup({
-              show: true,
-              message: "Are you sure you want to clear history",
-              acceptFn: () => {
-                dispatch(addTransferred({ files: [], mode: "replace" }));
-              },
-            });
-          },
-        }}
-        usePredefinedcolor={false}
-        className="bg-red-700 text-white hover:bg-red-800"
-      >
+      <Card attrs={{onClick: ()=> navigate("/history")}} extraClassNames="flex cursor-pointer justify-between font-medium text-lg items-center gap-2">
+        <div className="flex justify-start items-center flex-1 gap-2">
+          <span>
+            <FaClock />
+          </span>
+          <span>Transfer History</span>
+        </div>
         <span>
-          <FaTrash />
+          <FaArrowRight />
         </span>
-        <span>Clear Transfer History</span>
-      </Button>
+      </Card>
+
+      <div className="w-full flex justify-center">
+        <Button
+          attrs={{
+            onClick: () => {
+              setPopup({
+                show: true,
+                message: "Are you sure you want to clear history",
+                acceptFn: () => {
+                  dispatch(addTransferred({ files: [], mode: "replace" }));
+                },
+              });
+            },
+          }}
+          usePredefinedcolor={false}
+          className="bg-red-700 max-w-135 text-white hover:bg-red-800"
+          width="w-full"
+          rounded="rounded-md"
+        >
+          <span>
+            <FaTrash />
+          </span>
+          <span>Clear Transfer History</span>
+        </Button>
+      </div>
     </section>
   );
 };

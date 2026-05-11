@@ -7,6 +7,7 @@ import AppWrapper from "./components/page-layouts/AppWrapper";
 import AudioTab from "./components/tab-components/AudioTab";
 import DocumentTab from "./components/tab-components/DocumentTab";
 import ImageTab from "./components/tab-components/ImageTab";
+import MediaFolders from './components/tab-components/MediaFolders';
 import SettingsTab from "./components/tab-components/SettingsTab";
 import TransferHistoryTab from "./components/tab-components/TransferHistoryTab";
 import TransferTab from "./components/tab-components/TransferTab";
@@ -31,17 +32,25 @@ const App = () => {
   useEffect(() => {
     (async () => {
       try {
-        await invoke("disconnect_server");
         if (socket) socket.close();
-        const sett = await invoke<string>("get_settings", { defaultSettings });
+        const sett = await invoke<string>("get_settings", { defaultSettings: JSON.stringify(defaultSettings) });
         const trans = await invoke<string>("get_transferred");
+        console.log(trans, "yyey")
         dispatch(setSettings(JSON.parse(sett)));
-        dispatch(addTransferred({ files: JSON.parse(trans), mode: "replace" }));
+        dispatch(addTransferred({ files: trans ? JSON.parse(trans) : [], mode: "replace" }));
         settingsInit.current = true;
       } catch (err) {
         console.log(err);
       }
     })();
+
+    (async()=>{
+      try {
+        await invoke("disconnect_server");
+      } catch (err) {
+        console.log(err)
+      }
+    })()
 
     const handleResize = () => {
       dispatch(
@@ -88,11 +97,11 @@ const App = () => {
       if (completed.length > 0) dispatch(
         addTransferred({
           files: completed.map(
-            ({ file_name, file_path, file_size, type, sender_id }) => ({
+            ({ file_name, file_path, file_size, type, file_type, sender_id }) => ({
               file_name,
               file_path,
               file_size,
-              type,
+              type: type || file_type,
               date: new Date().toISOString(),
               isReceived: sessId !== sender_id,
             }),
@@ -127,6 +136,7 @@ const App = () => {
           <Route path="/transfers" element={<TransferTab />} />
           <Route path="/settings" element={<SettingsTab />} />
           <Route path="/history" element={<TransferHistoryTab />} />
+          <Route path="/media" element={<MediaFolders />} />
         </Routes>
       </AppWrapper>
       <ToastContainer

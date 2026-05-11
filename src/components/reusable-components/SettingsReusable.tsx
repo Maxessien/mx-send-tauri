@@ -1,18 +1,20 @@
-import { ReactNode } from "react";
-import Button from "./Button";
 import { motion } from 'framer-motion';
+import { DetailedHTMLProps, HTMLAttributes, ReactNode } from "react";
+import Button from "./Button";
 
 export const Card = ({
   children,
   extraClassNames,
+  attrs
 }: {
   children: ReactNode;
   extraClassNames?: string;
+  attrs?: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>
 }) => {
   const baseClsn =
     "w-full px-3 py-2 rounded-md bg-(--main-tertiary) border-(--text-primary-light) border-2";
   const clsn = extraClassNames ? baseClsn + " " + extraClassNames : baseClsn;
-  return <div className={clsn}>{children}</div>;
+  return <div {...attrs} className={clsn}>{children}</div>;
 };
 
 export const ToggleItem = ({
@@ -68,12 +70,16 @@ export const WarningPopup = ({
 }) => {
   return (
     <div className="fixed z-99999 top-0 flex justify-center items-center left-0 w-full h-full bg-[rgba(0,0,0,0.37)]">
-      <motion.div initial={{scale: 0.6}} animate={{scale: [1.02, 1]}} transition={{duration: 0.5, ease: "easeOut"}} className="px-3 rounded-md border-2 border-(--text-primary-light) bg-(--main-secondary-light) py-2">
+      <motion.div animate={{scale: [0.5, 1.02, 1]}} transition={{duration: 0.4, ease: "easeOut"}} className="px-3 rounded-md border-2 border-(--text-primary-light) bg-(--main-secondary-light) py-2">
         <p className="w-full text-lg font-medium mb-4">{warnMessage}</p>
-        <div className="flex w-full justify-center items-center">
+        <div className="flex w-full justify-between gap-2 items-center">
           <Button
-            attrs={{onClick: acceptFn}}
+            attrs={{onClick: ()=>{
+		acceptFn()
+		closeFn()
+	}}}
             usePredefinedcolor={false}
+	size="small"
             rounded="rounded-md"
             className="bg-green-700 text-white hover:bg-green-800"
           >
@@ -83,6 +89,7 @@ export const WarningPopup = ({
             attrs={{onClick: closeFn}}
             usePredefinedcolor={false}
             rounded="rounded-md"
+	size="small"
             className="bg-red-700 text-white hover:bg-red-800"
           >
             Cancel

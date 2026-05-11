@@ -1,7 +1,13 @@
+import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { JSX, useEffect, useState } from "react";
-import { FaFile, FaImage, FaMusic, FaVideo } from "react-icons/fa";
-import { FiLoader } from "react-icons/fi";
+import {
+  FaCog,
+  FaFile,
+  FaImage,
+  FaMusic,
+  FaVideo
+} from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router";
 import { toast } from "react-toastify";
@@ -15,7 +21,6 @@ import AppHeader from "./AppHeader";
 import AppNavItem from "./AppNavItem";
 import QrCodeDisplay from "./QrCodeDisplay";
 import QrScanner from "./QrScanner";
-import { invoke } from "@tauri-apps/api/core";
 
 export interface ScannerState {
   active: boolean;
@@ -139,7 +144,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           closeScanner={() => setShowScanner({ active: false, codeVal: "" })}
         />
       )}
-      <main className="w-full h-[calc(100vh-68px)] md:grid md:grid-cols-[25%_75%]">
+      <main className="w-full h-[calc(100vh-68px)] flex flex-col-reverse md:grid md:grid-cols-[25%_75%]">
         {showQrCode.active && (
           <QrCodeDisplay
             stopServer={stopServer}
@@ -149,17 +154,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
             }
           />
         )}
-        <aside className="md:h-full w-full z-15 fixed md:sticky flex flex-col gap-2 items-center justify-center bottom-3 left-0">
-          <div className="md:hidden w-full">
-            <ActionBtns
-              openScanner={() => setShowScanner({ active: true, codeVal: "" })}
-              setQrCode={(state) => setShowQrCode(state)}
-              showQrCode={showQrCode}
-              showScanner={showScanner}
-              serverStarted={serverStarted}
-              setServerStarted={() => setServerStarted(true)}
-            />
-          </div>
+        <aside className="md:h-full w-full">
           <ul className="space-y-3 md:h-full md:w-full w-[90%] mx-auto px-3 py-2 rounded-full bg-(--main-tertiary) border-2 border-(--text-secondary-light) md:rounded-none flex justify-between items-center md:flex-col md:items-left md:justify-start gap-2">
             <AppNavItem
               location="/audio"
@@ -189,26 +184,28 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
               title="Document"
             />
             <AppNavItem
-              location="/transfers"
-              active={location.pathname.trim() === "/transfers"}
-              icon={<FiLoader />}
-              title="Transfers"
+              location="/settings"
+              active={location.pathname.trim() === "/settings" || location.pathname.trim() === "/history"}
+              icon={<FaCog />}
+              title="Settings"
             />
           </ul>
         </aside>
-        <div className="hidden fixed bottom-4 w-[73vw] z-99 right-[25vw] translate-x-[23vw] md:block">
-          <ActionBtns
-            openScanner={() => setShowScanner({ active: true, codeVal: "" })}
-            setQrCode={(state) => setShowQrCode(state)}
-            showQrCode={showQrCode}
-            showScanner={showScanner}
-            serverStarted={serverStarted}
-            setServerStarted={() => setServerStarted(true)}
-          />
+        <div className="flex-1 flex pb-3 min-h-0 flex-col">
+          <section className="w-full px-3 flex-1 py-5 overflow-y-auto">
+            {children}
+          </section>
+          <div className="block">
+            <ActionBtns
+              openScanner={() => setShowScanner({ active: true, codeVal: "" })}
+              setQrCode={(state) => setShowQrCode(state)}
+              showQrCode={showQrCode}
+              showScanner={showScanner}
+              serverStarted={serverStarted}
+              setServerStarted={() => setServerStarted(true)}
+            />
+          </div>
         </div>
-        <section className="w-full px-3 py-5 h-full overflow-auto">
-          {children}
-        </section>
       </main>
     </div>
   );
