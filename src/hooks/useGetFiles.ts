@@ -96,6 +96,7 @@ const useGetDirList = (dirPath: string, queryOptions?: UndefinedInitialDataOptio
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
+    staleTime: 1000 * 60 * 60,
     ...queryOptions,
     queryKey: [dirPath, "get_dir_list"],
     queryFn: getDirList
