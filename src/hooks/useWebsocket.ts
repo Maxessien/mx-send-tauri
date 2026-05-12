@@ -24,14 +24,23 @@ const useWebsocket = () => {
         query: { session: connectionInfo.session_id },
       });
 	
-        dispatch(setConnection({connectionInfo, count, isConnected, role, socket: socketIo}))
+      dispatch(setConnection({connectionInfo, count, isConnected, role, socket: socketIo}))
 
       socketIo.on("connect", () => {
         console.log("Socket connected")
       });
-      socketIo.on("disconnect", (reason, desc) =>
-        console.log("Socket disconnected", { reason, desc }),
-      );
+      socketIo.on("disconnect", (reason, desc) =>{
+        console.log("Socket disconnected", { reason, desc })
+        dispatch(
+          setConnection({
+            count: 0,
+            isConnected: false,
+            role: "receiver",
+            connectionInfo: { ip_address: "", port: "", session_id: "" },
+            socket: null,
+          }),
+        );
+      });
       socketIo.on("newConnection", () => {
         console.log("new connection")
         dispatch(

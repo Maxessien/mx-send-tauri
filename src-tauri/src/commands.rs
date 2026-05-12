@@ -44,11 +44,17 @@ pub async fn create_conn_server<'a>(
 
 #[tauri::command]
 pub async fn disconnect_server(app: tauri::AppHandle) -> Result<String, String> {
+    println!("disconnect_server called");
     let state = app.state::<Mutex<Option<Handle<SocketAddr>>>>();
+    println!("got state, awaiting lock...");
     let mut handle = state.lock().await;
+    println!("lock acquired");
     if let Some(h) = handle.take() {
+        println!("shutting down handle");
         h.graceful_shutdown(Some(Duration::from_secs(1)));
+        println!("graceful shutdown triggered");
     };
+    println!("returning from disconnect_server");
     Ok(String::from("Shutdown successful"))
 }
 

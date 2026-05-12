@@ -10,13 +10,12 @@ import {
   FaMusic,
   FaVideo
 } from "react-icons/fa";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useLocation } from "react-router";
 import { toast } from "react-toastify";
 import { useReceiver } from "../../hooks/useGetFiles";
 import useWebsocket from "../../hooks/useWebsocket";
 import { RootState } from "../../store";
-import { setConnection } from "../../store-slices/connectionSlice";
 import { DownloadProgress, FileRes, UploadProgress } from "../../types";
 import ActionBtns from "./ActionBtns";
 import AppHeader from "./AppHeader";
@@ -41,36 +40,24 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
 
   const [serverStarted, setServerStarted] = useState(false);
 
-  const dispatch = useDispatch();
-
-  const stopServer = async () => {
-    console.log("running");
-    try {
-      const res = await invoke("disconnect_server");
-      console.log(res);
-      setShowQrCode({ active: false, codeVal: "" });
-      dispatch(
-        setConnection({
-          count: 0,
-          isConnected: false,
-          role: "receiver",
-          connectionInfo: { ip_address: "", port: "", session_id: "" },
-          socket: null,
-        }),
-      );
-      setServerStarted(false);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      console.log("ran");
-    }
-  };
-
-  const { socket } = useWebsocket();
-  const { downloadVideo } = useReceiver();
   const { connectionInfo, isConnected, role } = useSelector(
     (state: RootState) => state.connection,
   );
+
+  const { socket } = useWebsocket();
+
+  const stopServer = async () => {
+    try {
+      const res = await invoke("disconnect_server");
+      setShowQrCode({ active: false, codeVal: "" });
+      if (socket) socket.close()
+      setServerStarted(false);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const { downloadVideo } = useReceiver();
   const appSessionId = useSelector((state: RootState) => state.appSession);
 
   useEffect(() => {

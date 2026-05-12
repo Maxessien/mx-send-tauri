@@ -67,10 +67,12 @@ pub async fn create_server(app_handle: AppHandle) -> String {
     tauri::async_runtime::spawn(async move {
         let handle = Handle::new();
         let app_clone = app_handle.clone();
-        let state = app_clone.state::<Mutex<Option<Handle<SocketAddr>>>>();
-        let mut val = state.lock().await;
-        let handle_clone = handle.clone();
-        *val = Some(handle_clone);
+            let state = app_clone.state::<Mutex<Option<Handle<SocketAddr>>>>();
+        {
+            let mut val = state.lock().await;
+            let handle_clone = handle.clone();
+            *val = Some(handle_clone);
+        }
         let cors = CorsLayer::new()
             .allow_methods([Method::POST, Method::GET, Method::DELETE, Method::PATCH])
             .allow_origin(Any)
