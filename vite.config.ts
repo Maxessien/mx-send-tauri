@@ -1,13 +1,14 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import tailwindLegacy from 'vite-plugin-tailwind-legacy';
 
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [tailwindcss(), react()],
+  plugins: [tailwindcss(), react(), tailwindLegacy()],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
