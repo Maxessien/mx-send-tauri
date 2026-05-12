@@ -48,7 +48,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
 
   const stopServer = async () => {
     try {
-      const res = await invoke("disconnect_server");
+      await invoke("disconnect_server");
       setShowQrCode({ active: false, codeVal: "" });
       if (socket) socket.close()
       setServerStarted(false);
