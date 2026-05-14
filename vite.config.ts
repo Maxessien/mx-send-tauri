@@ -8,7 +8,16 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [tailwindcss(), react(), tailwindLegacy()],
+  plugins: [
+    tailwindcss(), 
+    react(), 
+    tailwindLegacy({
+      tailwindConfig: 'tailwind.config.legacy.js',
+      assetsDir: 'assets',
+      publicPath: '/assets/',
+      injectInHTML: true,
+    })
+  ],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
