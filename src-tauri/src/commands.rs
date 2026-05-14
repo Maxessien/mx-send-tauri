@@ -7,8 +7,7 @@ use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
-use tokio::fs::{create_dir_all, write};
-use tokio::io::AsyncReadExt;
+use tokio::fs::write;
 use tokio::{fs::File, io::AsyncWriteExt};
 use tokio_util::io::ReaderStream;
 use uuid::Uuid;
@@ -329,29 +328,9 @@ pub async fn save_file(
     }
 }
 
-pub async fn get_settings_path(app: &tauri::AppHandle) -> Result<(PathBuf, bool), String> {
-    let mut was_created = false;
-    let path = match app.path().app_data_dir() {
-        Ok(p) => p,
-        Err(_) => return Err("Couldn't resolve app data dir".to_string()),
-    };
-    let settings_path = path.join("settings.json");
-    if !settings_path.exists() {
-        match create_dir_all(&path).await {
-            Ok(_) => {}
-            Err(_) => return Err("Couldn't create settings path".to_string()),
-        };
-        match File::create_new(&settings_path).await {
-            Ok(_) => was_created = true,
-            Err(_) => return Err("Couldn't create settings file".to_string()),
-        };
-    }
-    Ok((settings_path, was_created))
-}
-
 #[tauri::command]
 pub async fn save_settings(app: tauri::AppHandle, settings: String) -> Result<(), String> {
-    let settings_path = get_settings_path(&app).await?;
+    let settings_path = get_file_path(&app, "settings.json").await?;
 
     match write(settings_path.0, settings.as_bytes()).await {
         Ok(_) => {}
@@ -365,8 +344,8 @@ pub async fn get_settings(
     app: tauri::AppHandle,
     default_settings: String,
 ) -> Result<String, String> {
-    let (settings_path, was_created) = get_settings_path(&app).await?;
-    let mut settings = String::new();
+    let (settings_path, was_created) = get_file_path(&app, "settings.json").await?;
+    let settings: String;
 
     if was_created {
         match write(settings_path, default_settings.as_bytes()).await {
@@ -376,14 +355,7 @@ pub async fn get_settings(
             Err(_) => return Err("Couldn't write to settings file".to_string()),
         };
     } else {
-        match File::open(settings_path).await {
-            Ok(mut f) => {
-                f.read_to_string(&mut settings)
-                    .await
-                    .map_err(|_| "Couldn't read settings file".to_string())?;
-            }
-            Err(_) => return Err("Couldn't read settings file".to_string()),
-        };
+        settings = read_json_file(settings_path).await?;
     };
 
     Ok(settings)
@@ -391,22 +363,35 @@ pub async fn get_settings(
 
 #[tauri::command]
 pub async fn get_transferred(app: tauri::AppHandle) -> Result<String, String> {
-    let mut content = String::new();
-    let path = get_transfer_path(&app).await?;
-    match File::open(&path).await {
-        Ok(mut f) => {
-            f.read_to_string(&mut content)
-                .await
-                .map_err(|_| "Failed to read transfer file".to_string())?;
-        }
-        Err(_) => return Err("Failed to open file".to_string()),
-    };
+    let (path, was_created) = get_file_path(&app, "transfers.json").await?;
+    if was_created {
+        return Ok("[]".to_string());
+    }
+    let content = read_json_file(path).await?;
     Ok(content)
+}
+#[tauri::command]
+pub async fn save_transfer(app: tauri::AppHandle, content: String) -> Result<(), String> {
+    let (path, _) = get_file_path(&app, "transfers.json").await?;
+    match write(path, content).await {
+        Ok(_) => {}
+        Err(_) => return Err("Failed to save file".to_string()),
+    };
+    Ok(())
 }
 
 #[tauri::command]
-pub async fn save_transfer(app: tauri::AppHandle, content: String) -> Result<(), String> {
-    let path = get_transfer_path(&app).await?;
+pub async fn get_traverse_cache(app: tauri::AppHandle) -> Result<String, String> {
+    let (path, was_created) = get_file_path(&app, "cache.json").await?;
+    if was_created {
+        return Ok("{}".to_string());
+    };
+    Ok(read_json_file(path).await?)
+}
+
+#[tauri::command]
+pub async fn save_traverse_cache(app: tauri::AppHandle, content: String) -> Result<(), String> {
+    let (path, _) = get_file_path(&app, "cache.json").await?;
     match write(path, content).await {
         Ok(_) => {}
         Err(_) => return Err("Failed to save file".to_string()),
@@ -459,17 +444,17 @@ pub async fn list_dir(
                 };
                 let clone = e.clone();
                 let ext = match clone.path().extension() {
-                    Some(str)=> match str.to_str() {
-                        Some(s)=>s,
-                        None=> continue
+                    Some(str) => match str.to_str() {
+                        Some(s) => s,
+                        None => continue,
                     },
-                    None => continue
+                    None => continue,
                 };
                 let file = FileResWithType {
                     file_name: e.file_name().to_string_lossy().into_owned(),
                     file_path: e.into_path(),
                     file_size: size,
-                    file_type: get_file_type(ext).to_owned()
+                    file_type: get_file_type(ext).to_owned(),
                 };
                 dir_list.files.push(file);
             };

@@ -1,7 +1,10 @@
 use serde::Serialize;
 use std::path::PathBuf;
 use tauri::Manager;
-use tokio::fs::{create_dir_all, File};
+use tokio::{
+    fs::{create_dir_all, File},
+    io::AsyncReadExt,
+};
 use uuid::Uuid;
 
 pub struct SessionId(pub Uuid);
@@ -25,19 +28,19 @@ pub struct FileResWithType {
     pub file_name: String,
     pub file_size: u64,
     pub file_path: PathBuf,
-    pub file_type: String
+    pub file_type: String,
 }
 
 #[derive(Serialize)]
 pub struct FolderRes {
     pub folder_name: String,
-    pub path: PathBuf
+    pub path: PathBuf,
 }
 
 #[derive(Serialize)]
 pub struct DirList {
     pub folders: Vec<FolderRes>,
-    pub files: Vec<FileResWithType>
+    pub files: Vec<FileResWithType>,
 }
 
 #[cfg(target_os = "android")]
@@ -52,12 +55,12 @@ pub fn get_dirs(_app: &tauri::AppHandle) -> [PathBuf; 4] {
 }
 
 #[cfg(target_os = "android")]
-pub fn get_home_dir(_app: &tauri::AppHandle)-> PathBuf {
+pub fn get_home_dir(_app: &tauri::AppHandle) -> PathBuf {
     PathBuf::from("/storage/emulated/0")
 }
 
 #[cfg(not(target_os = "android"))]
-pub fn get_home_dir(app: &tauri::AppHandle)-> PathBuf {
+pub fn get_home_dir(app: &tauri::AppHandle) -> PathBuf {
     app.path().home_dir().unwrap_or_else(|_| PathBuf::from("."))
 }
 
@@ -91,37 +94,35 @@ pub struct DownloadProgressPayload {
     pub sender_id: String,
 }
 
-pub async fn get_settings_path(app: &tauri::AppHandle) -> Result<(PathBuf, bool), String> {
+pub async fn get_file_path(app: &tauri::AppHandle, file: &str) -> Result<(PathBuf, bool), String> {
     let mut was_created = false;
     let path = match app.path().app_data_dir() {
         Ok(p) => p,
         Err(_) => return Err("Couldn't resolve app data dir".to_string()),
     };
-    let settings_path = path.join("settings.json");
-    if !settings_path.exists() {
+    let file_path = path.join(file);
+    if !file_path.exists() {
         match create_dir_all(&path).await {
             Ok(_) => {}
-            Err(_) => return Err("Couldn't create settings path".to_string()),
+            Err(_) => return Err("Couldn't create path".to_string()),
         };
-        File::create_new(&settings_path)
+        File::create_new(&file_path)
             .await
-            .map_err(|_| "Couldn't create settings file".to_string())?;
-        was_created = true;    }
-    Ok((settings_path, was_created))
+            .map_err(|_| "Couldn't create file".to_string())?;
+        was_created = true;
+    }
+    Ok((file_path, was_created))
 }
 
-pub async fn get_transfer_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let parent = match app.path().app_data_dir() {
-        Ok(p) => p,
-        Err(_) => return Err("Failed to get app data dir".to_string()),
+pub async fn read_json_file(path: PathBuf) -> Result<String, String> {
+    let mut str = String::new();
+    match File::open(path).await {
+        Ok(mut f) => {
+            f.read_to_string(&mut str)
+                .await
+                .map_err(|_| "Couldn't read json file".to_string())?;
+        }
+        Err(_) => return Err("Couldn't read json file".to_string()),
     };
-    create_dir_all(&parent).await.map_err(|_| "Couldn't create parent dir".to_string())?;
-    let path = parent.join("transfers.json");
-    if !path.exists() {
-        match File::create_new(&path).await {
-            Ok(_) => {}
-            Err(_) => return Err("Failed to create file".to_string()),
-        };
-    };
-    Ok(path)
+    Ok(str)
 }
