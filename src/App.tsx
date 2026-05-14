@@ -14,10 +14,9 @@ import TransferHistoryTab from "./components/tab-components/TransferHistoryTab";
 import TransferTab from "./components/tab-components/TransferTab";
 import VideoTab from "./components/tab-components/VideoTab";
 import { RootState } from "./store";
-import { addManyFiles, addTransferred } from "./store-slices/allFilesSlice";
+import { addTransferred } from "./store-slices/allFilesSlice";
 import { setSettings } from "./store-slices/settingsSlice";
 import { setWindow } from "./store-slices/windowSizeSlice";
-import { AllFilesState } from "./types";
 import { defaultSettings, determineFilesEqual } from "./utils/file-utils";
 
 const App = () => {
@@ -25,7 +24,6 @@ const App = () => {
   const { socket } = useSelector((state: RootState) => state.connection);
   const settings = useSelector((state: RootState) => state.settings);
   const sessId = useSelector((state: RootState) => state.appSession);
-  const {audio, document: fileDocs, image, video} = useSelector((state: RootState) => state.allFiles);
   const { transferred, transferring } = useSelector(
     (state: RootState) => state.allFiles,
   );
@@ -38,15 +36,9 @@ const App = () => {
         if (socket) socket.close();
         const sett = await invoke<string>("get_settings", { defaultSettings: JSON.stringify(defaultSettings) });
         const trans = await invoke<string>("get_transferred");
-        const caches: Pick<AllFilesState, "audio" | "document" | "image" | "video"> = JSON.parse(await invoke<string>("get_traverse_cache"));
         
         dispatch(setSettings(JSON.parse(sett)));
         dispatch(addTransferred({ files: trans ? JSON.parse(trans) : [], mode: "replace" }));
-
-        if (caches.audio) dispatch(addManyFiles({info: caches.audio, type: "audio"}))
-        if (caches.document) dispatch(addManyFiles({info: caches.document, type: "document"}))
-        if (caches.video) dispatch(addManyFiles({info: caches.video, type: "video"}))
-        if (caches.image) dispatch(addManyFiles({info: caches.image, type: "image"}))
         
         settingsInit.current = true;
       } catch (err) {
@@ -98,18 +90,6 @@ const App = () => {
       }
     })();  
   }, [transferred]);
-
-  useEffect(() => {
-    if (!settingsInit.current) return;
-    (async () => {
-      try {
-        await invoke("save_traverse_cache", { content: JSON.stringify({audio, fileDocs, image, video}) });
-      } catch (err) {
-        console.log(err);
-      }
-    })();
-     
-  }, [audio, fileDocs, image, video]);
   
   useEffect(() => {
     (() => {

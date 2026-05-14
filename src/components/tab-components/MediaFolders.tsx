@@ -76,6 +76,7 @@ const MediaFolders = () => {
     queryFn: ({ queryKey }) => getFolders(queryKey[0]),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
+    staleTime: 60 * 60 * 1000
   });
 
   const setTrPaths = (paths: string[]) => {
