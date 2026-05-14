@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { addManyFiles } from "../store-slices/allFilesSlice";
-import { ActiveTab, DirList, FileRes, FileResType } from "../types";
+import { DirList, FileRes, FileResType } from "../types";
 import { getRustFileType } from "../utils/file-utils";
 
 const useGetFiles = (
@@ -13,12 +13,12 @@ const useGetFiles = (
     FileRes[],
     Error,
     FileRes[],
-    ActiveTab[]
+    FileResType[]
   >,
 ) => {
   const dispatch = useDispatch();
-  const transferring = useSelector(
-    (state: RootState) => state.allFiles.transferring,
+  const files = useSelector(
+    (state: RootState) => state.allFiles,
   );
   const { extraTraversalPaths } = useSelector(
     (state: RootState) => state.settings,
@@ -45,11 +45,12 @@ const useGetFiles = (
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
+    initialData: files[fileType].length > 0 ? files[fileType] : undefined,
+    enabled: files[fileType].length <= 0,
     ...queryOptions,
     queryKey: [fileType],
     queryFn: ({ queryKey }) => {
-      if (queryKey?.[0] === "transfers") return transferring;
-      else return getFiles(queryKey?.[0]);
+      return getFiles(queryKey?.[0]);
     },
   });
 
