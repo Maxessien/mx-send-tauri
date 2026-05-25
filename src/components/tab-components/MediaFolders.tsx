@@ -141,8 +141,7 @@ const MediaFolders = () => {
       <TabLoader isLoading={isFetching}>
         {data && data?.length > 0 ? (
           <ul className="space-y-1">
-            {data.map(({ folder_name, path }) => {
-              const parent = searchParams.get("path");
+            {[...data].sort((a, b) => a.folder_name.localeCompare(b.folder_name)).map(({ folder_name, path }) => {              const parent = searchParams.get("path");
               const selected =
                 extraTraversalPaths.includes(path) ||
                 (parent && extraTraversalPaths.includes(parent)) ||

@@ -17,9 +17,7 @@ const useGetFiles = (
   >,
 ) => {
   const dispatch = useDispatch();
-  const files = useSelector(
-    (state: RootState) => state.allFiles,
-  );
+  const files = useSelector((state: RootState) => state.allFiles);
   const { extraTraversalPaths } = useSelector(
     (state: RootState) => state.settings,
   );
@@ -77,8 +75,12 @@ const useReceiver = () => {
   return { downloadVideo };
 };
 
-const useGetDirList = (dirPath: string, queryOptions?: UndefinedInitialDataOptions<DirList, Error, DirList, string[]>) => {
+const useGetDirList = (
+  dirPath: string,
+  queryOptions?: UndefinedInitialDataOptions<DirList, Error, DirList, string[]>,
+) => {
   const [list, setList] = useState<DirList>({ files: [], folders: [] });
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getDirList = async () => {
     try {
@@ -100,15 +102,50 @@ const useGetDirList = (dirPath: string, queryOptions?: UndefinedInitialDataOptio
     staleTime: 1000 * 60 * 60,
     ...queryOptions,
     queryKey: [dirPath, "get_dir_list"],
-    queryFn: getDirList
+    queryFn: getDirList,
   });
 
-  useEffect(()=>{
-    setList(query.data || {files: [], folders: []})
-  }, [query.data, query.dataUpdatedAt, query.errorUpdateCount])
+  const setDefault = () => {
+    setList(
+      query.data
+        ? {
+            files: query.data?.files?.sort((a, b) =>
+              a.file_name.localeCompare(b.file_name),
+            ),
+            folders: query.data?.folders?.sort((a, b) =>
+              a.folder_name.localeCompare(b.folder_name),
+            ),
+          }
+        : { files: [], folders: [] },
+    );
+  };
 
-  return {...query, dirList: list}
+  useEffect(() => {
+    setDefault();
+  }, [query.data, query.dataUpdatedAt, query.errorUpdateCount]);
+
+  useEffect(() => {
+    setSearchQuery("");
+  }, [dirPath]);
+
+  useEffect(() => {
+    if (!(searchQuery.trim().length > 0)) setDefault();
+    else
+      setList((list) => ({
+        files: list.files.filter(({ file_name }) =>
+          file_name
+            .toLocaleLowerCase()
+            .includes(searchQuery.toLocaleLowerCase()),
+        ),
+        folders: list.folders?.filter(({ folder_name }) =>
+          folder_name
+            .toLocaleLowerCase()
+            .includes(searchQuery.toLocaleLowerCase()),
+        ),
+      }));
+  }, [searchQuery]);
+
+  return { ...query, dirList: list, setSearchQuery, searchQuery };
 };
 
 export { useGetDirList, useGetFiles, useReceiver };
-
