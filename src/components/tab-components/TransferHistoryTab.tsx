@@ -54,7 +54,9 @@ const TransferHistoryTab = () => {
       <div className="space-y-2.6">
         {sorted.merged.map(({ date, files }) => {
           return (
-            <div key={date} className="space-y-2">
+            files.filter(({ isReceived }) =>
+                    historyActiveTab === "received" ? isReceived : !isReceived,
+                  ).length > 0 ? <div key={date} className="space-y-2">
               <h3 className="w-full text-center font-medium text-xl">{date}</h3>
               <div className="space-y-1.5">
                 {files
@@ -65,7 +67,7 @@ const TransferHistoryTab = () => {
                     return <TransferTabItem file={f} />;
                   })}
               </div>
-            </div>
+            </div> : <></>
           );
         })}
       </div>

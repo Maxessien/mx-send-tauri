@@ -41,6 +41,10 @@ body{
   padding-bottom: var(--safe-area-inset-bottom);
 }
 
+small{
+  color: var(--text-primary-light);
+}
+
 .scrollbar-hide{
   scrollbar-width: none;
   -ms-overflow-style: none;

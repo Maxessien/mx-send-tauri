@@ -48,7 +48,7 @@ const InternalStorageTab = () => {
                 return (
                   <li
                     key={path}
-                    className=" bg-(--main-tertiary) rounded-md"
+                    className=" bg-(--main-tertiary) w-full rounded-md"
                     style={{
                       border: "1px solid var(--main-tertiary-light)",
                     }}
@@ -57,14 +57,14 @@ const InternalStorageTab = () => {
                       onClick={() => {
                         setSearchPar({ path });
                       }}
-                      className="text-left cursor-pointer w-full flex gap-3 justify-start items-center flex-1 px-3 py-2 transition-all rounded-md hover:bg-(--main-tertiary-light)"
+                      className="text-left cursor-pointer w-full flex gap-3 justify-start items-center w-full px-3 py-2 transition-all rounded-md hover:bg-(--main-tertiary-light)"
                     >
                       <span className="text-xl font-bold">
                         <FaFolder />
                       </span>
-                      <div>
-                        <p className="m-0 font-medium">{folder_name}</p>
-                        <small className="block">{path}</small>
+                      <div className="flex-1 max-w-[calc(100%-30px)]">
+                        <p className="m-0 w-full line-clamp-2 wrap-break-word font-medium">{folder_name}</p>
+                        <small className="w-full line-clamp-3 wrap-break-word">{path}</small>
                       </div>
                     </button>
                   </li>

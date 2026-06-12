@@ -36,7 +36,7 @@ const TabListItem = ({
     <>
       <div
         onClick={handleSelection}
-        className="flex relative w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md"
+        className="flex relative w-full gap-2 sm:gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md"
       >
         <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
           <img
@@ -45,11 +45,11 @@ const TabListItem = ({
             alt="Image"
           />
         </div>
-        <div className="space-y-2 min-w-20 flex-1">
-          <p className="sm:text-base text-sm wrap-break-word font-medium text-left">
+        <div className="space-y-2 max-w-[calc(100%-58px)] sm: max-w-[calc(100%-85px)]  flex-1">
+          <p className="sm:text-base text-sm line-clamp-2 wrap-break-word font-medium text-left">
             {fileName}
           </p>
-          <p className="text-sm wrap-break-word font-medium text-left">
+          <p className="text-sm line-clamp-2 wrap-break-word font-medium text-left">
             {formatFileSize(fileSize)}
           </p>
         </div>

@@ -30,10 +30,10 @@ export const TransferTabItem = ({
         />
       </div>
       <div className="space-y-2 min-w-20 flex-1">
-        <p className="sm:text-base text-sm wrap-break-word font-medium text-left">
+        <p className="sm:text-base text-sm line-clamp-2 font-medium text-left">
           {file_name}
         </p>
-        <p className="text-sm wrap-break-word font-medium text-left">
+        <p className="text-sm line-clamp-2 font-medium text-left">
           {formatFileSize(file_size)}
         </p>
       </div>

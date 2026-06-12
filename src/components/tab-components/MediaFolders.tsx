@@ -76,7 +76,7 @@ const MediaFolders = () => {
     queryFn: ({ queryKey }) => getFolders(queryKey[0]),
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 60 * 1000
+    staleTime: 60 * 60 * 1000,
   });
 
   const setTrPaths = (paths: string[]) => {
@@ -141,57 +141,66 @@ const MediaFolders = () => {
       <TabLoader isLoading={isFetching}>
         {data && data?.length > 0 ? (
           <ul className="space-y-1">
-            {[...data].sort((a, b) => a.folder_name.localeCompare(b.folder_name)).map(({ folder_name, path }) => {              const parent = searchParams.get("path");
-              const selected =
-                extraTraversalPaths.includes(path) ||
-                (parent && extraTraversalPaths.includes(parent)) ||
-                defaultDirs.includes(path);
+            {[...data]
+              .sort((a, b) => a.folder_name.localeCompare(b.folder_name))
+              .map(({ folder_name, path }) => {
+                const parent = searchParams.get("path");
+                const selected =
+                  extraTraversalPaths.includes(path) ||
+                  (parent && extraTraversalPaths.includes(parent)) ||
+                  defaultDirs.includes(path);
 
-              return (
-                <li
-                  key={path}
-                  className="flex items-center justify-between px-3 py-2 rounded-md"
-                  style={{
-                    background: "var(--main-tertiary)",
-                    border: "1px solid var(--main-tertiary-light)",
-                  }}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <button
-                      aria-pressed={selected}
-                      aria-label={
-                        selected ? "Deselect folder" : "Select folder"
-                      }
-                      onClick={() => handleSelection(path)}
-                      className={`flex border-2 cursor-pointer border-(--text-primary) items-center w-6 h-6 justify-center rounded-full`}
-                      disabled={defaultDirs.includes(path)}
-                    >
-                      {selected && (
-                        <span className="w-full h-full bg-(--main-primary) rounded-full" />
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (defaultDirs.includes(path)) {
-                          toast.error("Cannot view protected locations");
-                          return;
+                return (
+                  <li
+                    key={path}
+                    className="flex items-center justify-between px-3 py-2 rounded-md"
+                    style={{
+                      background: "var(--main-tertiary)",
+                      border: "1px solid var(--main-tertiary-light)",
+                    }}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <button
+                        aria-pressed={selected}
+                        aria-label={
+                          selected ? "Deselect folder" : "Select folder"
                         }
-                        setSearchParams({ path });
-                      }}
-                      className="text-left cursor-pointer flex-1 px-3 py-2 transition-all rounded-[0px_6px_6px_0px] hover:bg-(--main-tertiary-light)"
-                      disabled={defaultDirs.includes(path)}
-                    >
-                      <p className="m-0 font-medium">{folder_name}</p>
-                      <small className="block">{path}</small>
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
+                        onClick={() => handleSelection(path)}
+                        className={`flex border-2 cursor-pointer border-(--text-primary) items-center w-6 h-6 justify-center rounded-full`}
+                        disabled={defaultDirs.includes(path)}
+                      >
+                        {selected && (
+                          <span className="w-full h-full bg-(--main-primary) rounded-full" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (defaultDirs.includes(path)) {
+                            toast.error("Cannot view protected locations");
+                            return;
+                          }
+                          setSearchParams({ path });
+                        }}
+                        className="text-left cursor-pointer flex-1 max-w-[calc(100%-50px)] py-2 transition-all rounded-[0px_6px_6px_0px] hover:bg-(--main-tertiary-light)"
+                        disabled={defaultDirs.includes(path)}
+                      >
+                        <p className="m-0 w-full line-clamp-2 wrap-break-word font-medium">
+                          {folder_name}
+                        </p>
+                        <small className="w-full line-clamp-3 wrap-break-word">
+                          {path}
+                        </small>
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
           </ul>
         ) : (
-          <p className="text-(--text-secondary) text-center text-xl font-semibold">No folders found</p>
+          <p className="text-(--text-secondary) text-center text-xl font-semibold">
+            No folders found
+          </p>
         )}
       </TabLoader>
     </div>
