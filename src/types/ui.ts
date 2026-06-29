@@ -16,6 +16,7 @@ export interface TabListItemProps {
   filePath: string;
   previewImgUrl?: string;
   type: FileResType;
+  mod: { secs_since_epoch: number; nanos_since_epoch: number }
 }
 
 export interface ButtonType {

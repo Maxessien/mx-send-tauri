@@ -1,4 +1,12 @@
-import { AppSettings, FileRes, FileResType, FileTransferred, List, MergedHistory, Transfer } from "../types";
+import {
+  AppSettings,
+  FileResRaw,
+  FileResType,
+  FileTransferred,
+  List,
+  MergedHistory,
+  Transfer,
+} from "../types";
 
 export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
   audio: "/audio-icon.jpg",
@@ -7,7 +15,7 @@ export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
   image: "/icons8-image-100.png",
 };
 
-export const determineFilesEqual = (file1: FileRes, file2: FileRes) => {
+export const determineFilesEqual = (file1: FileResRaw, file2: FileResRaw) => {
   return (
     file1.file_name === file2.file_name && file1.file_path === file2.file_path
   );
@@ -55,43 +63,47 @@ const checkFieldInList = (list: { [key: string]: any }[], field: string) => {
   return list.every((item) => item?.[field]);
 };
 
-export const sortFileList = ({direction, list, sortBy}: List) => {
+export const sortFileList = ({ direction, list, sortBy }: List) => {
   const fieldPresent =
-    sortBy === "name"
-      ? checkFieldInList(list, "file_name")
+    sortBy === "name" || sortBy === "createdAt"
+      ? sortBy === "name"
+        ? checkFieldInList(list, "file_name")
+        : checkFieldInList(list, "last_modified")
       : checkFieldInList(list, "file_size");
   if (!fieldPresent) return list;
 
-  const listCopy = [...list]
+  const listCopy = [...list];
 
   const sorted = listCopy.sort((a, b) =>
-    sortBy === "name"
-      ? a.file_name.localeCompare(b.file_name)
+    sortBy === "name" || sortBy === "createdAt"
+      ? sortBy === "name"
+        ? a.file_name.localeCompare(b.file_name)
+        : b.last_modified.secs_since_epoch - a.last_modified.secs_since_epoch
       : a.file_size - b.file_size,
   );
 
-  const final = direction === "asc" ? sorted : sorted.reverse()
+  const final = direction === "asc" ? sorted : sorted.reverse();
 
   return final;
 };
 
-export const sortTransferred = (infos: FileTransferred[])=>{
-  const sorted: {[key: string]: MergedHistory} = {}
-  infos.forEach((info)=>{
-    const dateString = new Date(info.date).toLocaleDateString()
+export const sortTransferred = (infos: FileTransferred[]) => {
+  const sorted: { [key: string]: MergedHistory } = {};
+  infos.forEach((info) => {
+    const dateString = new Date(info.date).toLocaleDateString();
     if (sorted[dateString]) {
-      sorted[dateString].files.push(info)
+      sorted[dateString].files.push(info);
     } else {
-      sorted[dateString] = {date: dateString, files: [info]}
+      sorted[dateString] = { date: dateString, files: [info] };
     }
-  })
-  return sorted
-}
+  });
+  return sorted;
+};
 export const defaultSettings: AppSettings = {
   cacheTraversalResult: true,
   keepScreenAwake: true,
   organizeFilesByType: true,
   saveTransferHistory: true,
   theme: "dark",
-  extraTraversalPaths: []
-}
+  extraTraversalPaths: [],
+};

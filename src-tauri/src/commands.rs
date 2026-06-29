@@ -83,10 +83,18 @@ pub async fn list_files(
                     Ok(meta) => meta.len(),
                     Err(_) => continue,
                 };
+                let modified = match e.metadata() {
+                    Ok(meta) => match meta.created() {
+                        Ok(m)=> m,
+                        Err(_) => continue
+                    },
+                    Err(_) => continue,
+                };
                 files.push(FileRes {
                     file_name: name,
                     file_path: e.into_path(),
                     file_size: size,
+                    last_modified: modified,
                 });
             }
         }
@@ -450,11 +458,19 @@ pub async fn list_dir(
                     },
                     None => continue,
                 };
+                let modified = match e.metadata() {
+                    Ok(meta) => match meta.created() {
+                        Ok(m)=> m,
+                        Err(_) => continue
+                    },
+                    Err(_) => continue,
+                };
                 let file = FileResWithType {
                     file_name: e.file_name().to_string_lossy().into_owned(),
                     file_path: e.into_path(),
                     file_size: size,
                     file_type: get_file_type(ext).to_owned(),
+                    last_modified: modified
                 };
                 dir_list.files.push(file);
             };

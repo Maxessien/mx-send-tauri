@@ -7,7 +7,10 @@ export interface FileRes {
   file_size: number;
   file_path: string;
   type: FileResType;
+  last_modified: { secs_since_epoch: number; nanos_since_epoch: number };
 }
+
+export type FileResRaw = Omit<FileRes, "last_modified">
 
 export interface FolderRes {
   folder_name: string,
@@ -54,7 +57,7 @@ export interface AllFilesState {
 
 export interface List {
   list: FileRes[];
-  sortBy: "name" | "size";
+  sortBy: "name" | "size" | "createdAt";
   direction: "asc" | "desc";
 }
 

@@ -11,7 +11,7 @@ export interface AppSettings {
     extraTraversalPaths: string[]
 }
 
-export interface FileTransferred extends FileRes {
+export interface FileTransferred extends Omit<FileRes, "last_modified"> {
     date: string,
     isReceived: boolean
 }

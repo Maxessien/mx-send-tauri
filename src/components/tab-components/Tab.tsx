@@ -10,6 +10,7 @@ import { sortFileList } from "../../utils/file-utils";
 import Button from "../reusable-components/Button";
 import TabFilesWrapper from "./TabFilesWrapper";
 import TabLoader from "./TabLoader";
+import ImageFiles from "./ImageFiles";
 
 interface Actions extends Omit<List, "list"> {
   search: string;
@@ -38,16 +39,18 @@ const Tab = ({
     sortBy: "name",
     search: "",
   });
-  const {width} = useSelector((state: RootState)=> state.windowSize)
+  const { width } = useSelector((state: RootState) => state.windowSize);
 
   const mappings: Mappings[] = [
     { direction: "asc", sortBy: "name", text: "A-Z" },
     { direction: "desc", sortBy: "name", text: "Z-A" },
     { direction: "desc", sortBy: "size", text: "Largest First" },
     { direction: "asc", sortBy: "size", text: "Smallest First" },
+    { direction: "asc", sortBy: "createdAt", text: "Newest First" },
+    { direction: "desc", sortBy: "createdAt", text: "Oldest First" },
   ];
   const [selectedMapping, setSelectedMapping] = useState<Mappings>(mappings[0]);
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (!query.data) return;
@@ -80,12 +83,17 @@ const Tab = ({
         <h2 className="font-semibold md:w-max text-center text-2xl">
           {tabTitle}
         </h2>
-        <Button attrs={{onClick: ()=> query.refetch()}} rounded="rounded-md" size={width >= 640 ? "medium" : "small"} color="primary">
+        <Button
+          attrs={{ onClick: () => query.refetch() }}
+          rounded="rounded-md"
+          size={width >= 640 ? "medium" : "small"}
+          color="primary"
+        >
           <span>
             <FaArrowsRotate />
           </span>
           <span className="hidden sm:inline">Refresh</span>
-        </Button>      
+        </Button>
       </header>
       <div className="w-full relative flex gap-2 justify-between items-center">
         <div className="relative w-full max-w-120">
@@ -98,32 +106,43 @@ const Tab = ({
             <FaSearch />
           </button>
         </div>
-        <Button attrs={{onClick: ()=> setShowFilters(!showFilters)}} rounded="rounded-md" size={width > 480 ? "medium" : "small"} color="primary">
+        <Button
+          attrs={{ onClick: () => setShowFilters(!showFilters) }}
+          rounded="rounded-md"
+          size={width > 480 ? "medium" : "small"}
+          color="primary"
+        >
           <span>
             <MdFilterList size={22} />
           </span>
           <span className="hidden w-max sm:inline">{selectedMapping.text}</span>
         </Button>
-        {showFilters && <div className="absolute z-99 flex flex-col gap-2 rounded-md bg-(--main-tertiary) border border-(--text-primary) p-1 top-[calc(100%+10px)] right-0">
-          {mappings.map((mapping) => {
-            const { direction, sortBy, text } = mapping;
-            return (
-              <button
-                className={`w-full px-3 py-2 cursor-pointer ${checkMappingsEqual(mapping, selectedMapping) ? "bg-(--main-primary) hover:bg-(--main-primary-light)" : "hover:bg-(--main-tertiary-light)"} rounded-md`}
-                onClick={() =>{
-                  setActions((state) => ({ ...state, direction, sortBy }))
-                  setSelectedMapping(mapping)
-                  setShowFilters(false)
-                }}
-              >
-                {text}
-              </button>
-            );
-          })}
-        </div>}
+        {showFilters && (
+          <div className="absolute z-99 flex flex-col gap-2 rounded-md bg-(--main-tertiary) border border-(--text-primary) p-1 top-[calc(100%+10px)] right-0">
+            {mappings.map((mapping) => {
+              const { direction, sortBy, text } = mapping;
+              return (
+                <button
+                  className={`w-full px-3 py-2 cursor-pointer ${checkMappingsEqual(mapping, selectedMapping) ? "bg-(--main-primary) hover:bg-(--main-primary-light)" : "hover:bg-(--main-tertiary-light)"} rounded-md`}
+                  onClick={() => {
+                    setActions((state) => ({ ...state, direction, sortBy }));
+                    setSelectedMapping(mapping);
+                    setShowFilters(false);
+                  }}
+                >
+                  {text}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
       <TabLoader isLoading={query.isFetching}>
-        <TabFilesWrapper files={list ?? []} />
+        {tabType !== "image" ? (
+          <TabFilesWrapper files={list ?? []} />
+        ) : (
+          <ImageFiles images={list ?? []} />
+        )}
       </TabLoader>
     </section>
   );

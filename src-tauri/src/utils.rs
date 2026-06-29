@@ -1,5 +1,5 @@
 use serde::Serialize;
-use std::path::PathBuf;
+use std::{path::PathBuf, time::SystemTime};
 use tauri::Manager;
 use tokio::{
     fs::{create_dir_all, File},
@@ -21,6 +21,7 @@ pub struct FileRes {
     pub file_name: String,
     pub file_size: u64,
     pub file_path: PathBuf,
+    pub last_modified: SystemTime
 }
 
 #[derive(Serialize)]
@@ -29,6 +30,7 @@ pub struct FileResWithType {
     pub file_size: u64,
     pub file_path: PathBuf,
     pub file_type: String,
+    pub last_modified: SystemTime
 }
 
 #[derive(Serialize)]

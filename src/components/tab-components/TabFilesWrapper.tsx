@@ -6,7 +6,7 @@ const TabFilesWrapper = ({ files }: { files: FileRes[] }) => {
   return (
     <>
       <div className="w-full space-y-2">
-        {files.length > 0 ? files.map(({ file_name, file_path, file_size, type }) => {
+        {files.length > 0 ? files.map(({ file_name, file_path, file_size, type, last_modified }) => {
           return (
             <TabListItem
               key={file_name + file_path}
@@ -15,6 +15,7 @@ const TabFilesWrapper = ({ files }: { files: FileRes[] }) => {
               fileSize={file_size}
               type={type}
               previewImgUrl={FILE_PREVIEW_IMAGES?.[type] || undefined}
+              mod={last_modified}
             />
           );
         }) : <p className="w-full text-center font-semibold text-2xl py-4">No Files found</p>}

@@ -95,7 +95,7 @@ const App = () => {
     (() => {
       const completed = transferring.filter(
         ({ current, total }) => current >= total,
-      ).filter((file) => !transferred.some((f) => determineFilesEqual(f, file)));      
+      ).filter((file) => !transferred.some((f) => determineFilesEqual(f, file)));
       if (completed.length > 0) dispatch(
         addTransferred({
           files: completed.map(

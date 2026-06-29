@@ -57,7 +57,7 @@ const InternalStorageTab = () => {
                       onClick={() => {
                         setSearchPar({ path });
                       }}
-                      className="text-left cursor-pointer w-full flex gap-3 justify-start items-center w-full px-3 py-2 transition-all rounded-md hover:bg-(--main-tertiary-light)"
+                      className="text-left cursor-pointer w-full flex gap-3 justify-start items-center px-3 py-2 transition-all rounded-md hover:bg-(--main-tertiary-light)"
                     >
                       <span className="text-xl font-bold">
                         <FaFolder />
@@ -72,13 +72,14 @@ const InternalStorageTab = () => {
               })}
             {dirList.files?.length > 0 &&
               dirList.files.map(
-                ({ file_name, file_path, file_size, file_type }) => {
+                ({ file_name, file_path, file_size, file_type, last_modified }) => {
                   return (
                     <TabListItem
                       fileName={file_name}
                       filePath={file_path}
                       fileSize={file_size}
                       type={file_type}
+                      mod={last_modified}
                     />
                   );
                 },
