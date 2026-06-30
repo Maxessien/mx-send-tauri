@@ -16,6 +16,12 @@ const TabListItem = ({
   const selected = useSelector((state: RootState) => state.allFiles.selected);
   const { handleSelection } = useSelectFile();
 
+  const checkSelected = () =>
+    selected.find(
+      ({ file_name, file_path }) =>
+        fileName === file_name && filePath === file_path,
+    );
+
   return (
     <>
       <div
@@ -45,12 +51,14 @@ const TabListItem = ({
             {formatFileSize(fileSize)}
           </p>
         </div>
-        <button className="w-4 min-w-4 aspect-square rounded-[3px] border border-(--text-secondary)">
-          {selected.find(
-            ({ file_name, file_path }) =>
-              fileName === file_name && filePath === file_path,
-          ) && (
-            <span className="w-full bg-(--main-primary) text-[12px] font-medium h-full rounded-[2.5px]">
+        <button
+          {...(checkSelected()
+            ? { style: { background: " var(--main-primary)", border: "none" } }
+            : {})}
+          className="w-4 min-w-4 aspect-square rounded-[3px] border border-(--text-secondary)"
+        >
+          {checkSelected() && (
+            <span className="w-full flex justify-center items-center text-[11px] font-medium h-full rounded-[2.5px]">
               <FaCheck />
             </span>
           )}
