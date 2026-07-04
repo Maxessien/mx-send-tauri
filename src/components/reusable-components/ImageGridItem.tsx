@@ -40,7 +40,7 @@ const ImageGridItem = ({
   return (
     <InView
       onChange={(inv) => {
-        if (inv && !show.includes(idx)) setShow([...show.slice(1), idx])
+        if (inv && !show.includes(idx)) setShow(prev => prev.includes(idx) ? prev : [...prev.slice(1), idx])
       }}
       as={"div"}
       threshold={0}

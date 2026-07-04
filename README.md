@@ -82,7 +82,7 @@ npx tauri ios build
 1. Open MxSend and click "Receive"
 2. Scan the sender's QR code
 3. Select files to transfer with real-time progress updates
-4. Files are organized by type in your MxSend folder folder
+4. Files are organized by type in your MxSend folder
 
 ## Development
 
