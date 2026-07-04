@@ -13,7 +13,7 @@ import {
 export const TransferTabItem = ({
   file,
 }: {
-  file: Omit<Transfer, "current" | "total" | "sender_id">;
+  file: Omit<Transfer, "current" | "total" | "sender_id" | "last_modified">;
 }) => {
   const { file_name, file_size, type, file_type } = file;
   return (
