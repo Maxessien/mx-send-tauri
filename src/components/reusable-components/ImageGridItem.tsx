@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaCheck } from "react-icons/fa";
 import { InView } from "react-intersection-observer";
 import { useSelector } from "react-redux";
@@ -10,12 +10,12 @@ const ImageGridItem = ({
   file,
   showPrev,
   url,
-  imgCount, idx
+  idx, showList
 }: {
   file: FileRes;
   showPrev: () => void;
   url: string;
-  imgCount: [number, React.Dispatch<React.SetStateAction<number>>];
+  showList: [number[], React.Dispatch<React.SetStateAction<number[]>>];
   idx: number
 }) => {
   const { handleSelection } = useSelectFile();
@@ -29,25 +29,18 @@ const ImageGridItem = ({
 
   const [imgLoaded, setImgLoaded] = useState<boolean>(false);
 
-  const [count, setCount] = imgCount;
-
-  const [counted, setCounted] = useState(false);
+  const [show, setShow] = showList
 
   const { file_path, file_name } = file;
 
-  const MAX_RENDER = 40;
+  useEffect(()=>{
+    if (!show.includes(idx)) setImgLoaded(false)
+  }, [show])
 
   return (
     <InView
       onChange={(inv) => {
-        if (inv && !counted) {
-          setCount((c) => c + 1);
-          setCounted(true);
-        };
-        if (!inv && counted && count > MAX_RENDER && count - idx >= MAX_RENDER) {
-          setCount((c) => c - 1);
-          setCounted(false);
-        }
+        if (inv && !show.includes(idx)) setShow([...show.slice(1), idx])
       }}
       as={"div"}
       threshold={0}
@@ -58,7 +51,7 @@ const ImageGridItem = ({
           {...(chkSelected(file_name, file_path)
             ? { style: { border: "3px solid var(--main-primary)" } }
             : {})}
-          className={`relative aspect-square overflow-hidden ${!imgLoaded || (!inView && count > MAX_RENDER) || counted ? "bg-gray-500" : ""}`}
+          className={`relative aspect-square overflow-hidden ${!imgLoaded ? "bg-gray-500" : ""}`}
         >
           <button
             {...(chkSelected(file_name, file_path)
@@ -74,7 +67,7 @@ const ImageGridItem = ({
           >
             {chkSelected(file_name, file_path) && <FaCheck />}
           </button>
-          {(inView || count <= MAX_RENDER) && counted && (
+          {(inView || show.includes(idx)) && (
             <img
               onLoad={() => {
                 setImgLoaded(true);

@@ -76,13 +76,13 @@ npx tauri ios build
 2. Select files from any category (Audio, Video, Documents, Images)
 3. Click "Send" to start the server and display a QR code
 4. The receiver scans the QR code to connect
-5. Files transfer automatically with real-time progress updates
+5. Select files to transfer with real-time progress updates
 
 ### As a Receiver
 1. Open MxSend and click "Receive"
 2. Scan the sender's QR code
-3. Browse available files and select what to download
-4. Files are organized by type in your downloads folder
+3. Select files to transfer with real-time progress updates
+4. Files are organized by type in your MxSend folder folder
 
 ## Development
 

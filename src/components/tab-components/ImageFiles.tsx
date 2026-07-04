@@ -1,8 +1,11 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FileRes } from "../../types";
 import ImageGridItem from "../reusable-components/ImageGridItem";
 import ImagePrev from "./ImagePrev";
+
+
+const MAX_RENDERS = Array(100).fill("n").map((_, idx)=> idx);
 
 const ImageFiles = ({ images }: { images: FileRes[] }) => {
   const [showPrev, setShowPrev] = useState({
@@ -11,9 +14,7 @@ const ImageFiles = ({ images }: { images: FileRes[] }) => {
     name: "",
   });
 
-  const imgCount = useState<number>(0);
-
-  useEffect(()=> console.log(imgCount), [imgCount])
+  const showList = useState(MAX_RENDERS)
 
   return (
     <div className="grid justify-between w-full gap-3 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -28,13 +29,13 @@ const ImageFiles = ({ images }: { images: FileRes[] }) => {
         const url = convertFileSrc(file.file_path);
         return (
           <ImageGridItem
-            imgCount={imgCount}
             key={i}
             file={file}
             url={url}
             showPrev={() =>
               setShowPrev({ active: true, name: file.file_name, url })
             }
+            showList={showList}
             idx={i}
           />
         );
