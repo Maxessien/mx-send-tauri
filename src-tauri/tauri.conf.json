@@ -22,14 +22,11 @@
       "assetProtocol": {
         "enable": true,
         "scope": [
-          "**/*.png",
-          "**/*.jpg",
-          "**/*.jpeg",
-          "**/*.webp",
-          "**/*.JPEG",
-          "**/*.JPG",
-          "**/*.PNG",
-          "**/*.WEBP"
+          "**/*.[pP][nN][gG]",
+          "**/*.[jJ][pP][gG]",
+          "**/*.[jJ][pP][eE][gG]",
+          "**/*.[wW][eE][bB][pP]",
+          "**/*.[gG][iI][fF]"
         ]
       }
     }

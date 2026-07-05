@@ -5,7 +5,7 @@ use local_ip_address::local_ip;
 use reqwest::{header, Body, ClientBuilder};
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 use tauri::{Emitter, Manager};
 use tokio::fs::write;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -77,19 +77,18 @@ pub async fn list_files(
             for e in entries {
                 let name = match e.file_name().to_str() {
                     Some(s) => s.to_string(),
-                    None => continue,
+                    None => "unknown".to_string(),
                 };
                 let size = match e.metadata() {
                     Ok(meta) => meta.len(),
-                    Err(_) => continue,
+                    Err(_) => 0,
                 };
-                let modified = match e.metadata() {
-                    Ok(meta) => match meta.created() {
-                        Ok(m)=> m,
-                        Err(_) => continue
-                    },
-                    Err(_) => continue,
-                };
+                let modified = e
+                    .metadata()
+                    .ok()
+                    .and_then(|meta| meta.created().or_else(|_| meta.modified()).ok())
+                    .unwrap_or(SystemTime::UNIX_EPOCH);
+                
                 files.push(FileRes {
                     file_name: name,
                     file_path: e.into_path(),
@@ -448,9 +447,10 @@ pub async fn list_dir(
             } else if show_file && e.file_type().is_file() {
                 let size = match e.metadata() {
                     Ok(meta) => meta.len(),
-                    Err(_) => continue,
+                    Err(_) => 0,
                 };
                 let clone = e.clone();
+                
                 let ext = match clone.path().extension() {
                     Some(str) => match str.to_str() {
                         Some(s) => s,
@@ -458,19 +458,18 @@ pub async fn list_dir(
                     },
                     None => continue,
                 };
-                let modified = match e.metadata() {
-                    Ok(meta) => match meta.created() {
-                        Ok(m)=> m,
-                        Err(_) => continue
-                    },
-                    Err(_) => continue,
-                };
+                let modified = e
+                    .metadata()
+                    .ok()
+                    .and_then(|meta| meta.created().or_else(|_| meta.modified()).ok())
+                    .unwrap_or(SystemTime::UNIX_EPOCH);
+
                 let file = FileResWithType {
                     file_name: e.file_name().to_string_lossy().into_owned(),
                     file_path: e.into_path(),
                     file_size: size,
                     file_type: get_file_type(ext).to_owned(),
-                    last_modified: modified
+                    last_modified: modified,
                 };
                 dir_list.files.push(file);
             };
