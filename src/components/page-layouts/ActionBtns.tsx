@@ -36,7 +36,7 @@ const ActionBtns = ({
 
   const dispatch = useDispatch();
 
-  const { sendFile } = useSendFiles();
+  const { pushUpload } = useSendFiles();
 
   const sendSelected = async () => {
     try {
@@ -46,7 +46,7 @@ const ActionBtns = ({
       });
       await Promise.all(
         selected.map((file) => {
-          sendFile(file, file.type);
+          return pushUpload(file, file.type);
         }),
       );
     } catch (err) {

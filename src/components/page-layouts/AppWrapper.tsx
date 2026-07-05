@@ -57,7 +57,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     }
   };
 
-  const { downloadVideo } = useReceiver();
+  const { pushDownload } = useReceiver();
   const appSessionId = useSelector((state: RootState) => state.appSession);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     if (isConnected && role === "receiver" && socket) {
       socket.emit("newConnection", connectionInfo.session_id);
       socket.on("newFile", (data: { file_id: string; sender_id: string }) => {
-        downloadVideo(data.file_id, data.sender_id);
+        pushDownload(data.file_id, data.sender_id);
       });
       listen<DownloadProgress>("download_progress", (event) => {
         const progress = event.payload;

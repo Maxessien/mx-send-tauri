@@ -143,9 +143,9 @@ pub async fn send_file(
     };
     let body = Body::wrap_stream(progress_stream);
     let client = ClientBuilder::new()
-        .default_headers(headers)
-        .build()
-        .unwrap();
+    .default_headers(headers)
+    .build()
+    .unwrap();
     match client.post(url).body(body).send().await {
         Ok(_) => {
             let _ = app.emit(

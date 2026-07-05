@@ -3,15 +3,29 @@ import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { FileRes, FileResType } from "../types";
 import { capitalise } from "../utils/file-utils";
+import { useState } from "react";
+import { uploadQueue } from "../utils/queue";
 
 const useSendFiles = () => {
   const { isConnected, role, connectionInfo, socket } = useSelector(
     (state: RootState) => state.connection,
   );
+  
   const appSession = useSelector((state: RootState) => state.appSession);
+  
+  const [isSending, setIsSending] = useState(false);
+
+  const pushUpload = (file: FileRes, type: FileResType) => {
+    uploadQueue.push({ file, type });
+    if (!isSending) {
+      const { file, type } = uploadQueue.pop();
+      sendFile(file, type);
+    }
+  };
 
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
+    if (!isSending) setIsSending(true);
     try {
       const path =
         role === "receiver"
@@ -24,7 +38,7 @@ const useSendFiles = () => {
           url,
           sessionId: connectionInfo.session_id,
           fileInfo: JSON.stringify(file),
-          size: file.file_size
+          size: file.file_size,
         });
       } else {
         const res = await fetch(url, {
@@ -40,19 +54,25 @@ const useSendFiles = () => {
         });
         if (res.ok) {
           const id: string = await res.text();
-          socket?.emit("newFile", {file_id: id, sender_id: appSession});
+          socket?.emit("newFile", { file_id: id, sender_id: appSession });
         }
         if (!res.ok)
           throw new Error(
             `Fetch failed: status-${res.status}, error-${res.statusText}`,
           );
       }
+
+      if (uploadQueue.traverse().length > 0) {
+        const { file, type } = uploadQueue.pop();
+        await sendFile(file, type);
+      } else setIsSending(false);
+
     } catch (err) {
       console.log(err);
     }
   };
 
-  return { sendFile };
+  return { sendFile, pushUpload };
 };
 
 export default useSendFiles;

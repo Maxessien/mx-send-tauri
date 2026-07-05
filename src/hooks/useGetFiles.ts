@@ -6,6 +6,7 @@ import { RootState } from "../store";
 import { addManyFiles } from "../store-slices/allFilesSlice";
 import { DirList, FileRes, FileResType } from "../types";
 import { getRustFileType } from "../utils/file-utils";
+import { downloadQueue } from "../utils/queue";
 
 const useGetFiles = (
   fileType: FileResType,
@@ -59,20 +60,38 @@ const useReceiver = () => {
   const { role, isConnected, connectionInfo } = useSelector(
     (state: RootState) => state.connection,
   );
+
+  const [isReceiving, setIsReceiving] = useState(false);
+
+  const pushDownload = (fileId: string, senderId: string) => {
+    downloadQueue.push({ fileId, senderId });
+    if (!isReceiving) {
+      const { fileId, senderId } = downloadQueue.pop();
+      downloadVideo(fileId, senderId);
+    }
+  };
+
   const downloadVideo = async (fileId: string, senderId: string) => {
     if (!isConnected || role !== "receiver") return;
+    if (!isReceiving) setIsReceiving(true);
     try {
       await invoke("download_file_from_sender", {
         url: `http://${connectionInfo.ip_address}:${connectionInfo.port}/download?id=${fileId}`,
         sessionId: connectionInfo.session_id,
         senderId,
       });
+
+      if (downloadQueue.traverse().length > 0) {
+        const { fileId, senderId } = downloadQueue.pop();
+        downloadVideo(fileId, senderId);
+      } else setIsReceiving(false);
+
     } catch (err) {
       console.log(err);
     }
   };
 
-  return { downloadVideo };
+  return { downloadVideo, pushDownload };
 };
 
 const useGetDirList = (

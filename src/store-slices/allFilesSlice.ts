@@ -49,7 +49,7 @@ const allFiles = createSlice({
     removeSelected: (state, { payload }: PayloadAction<FileRes>) => {
       state.selected = state.selected.filter(
         ({ file_name, file_path }) =>
-          file_name !== payload.file_name && file_path !== payload.file_path,
+          file_name !== payload.file_name || file_path !== payload.file_path,
       );
     },
     updateTransferProgress: (state, { payload }: PayloadAction<Transfer>) => {
