@@ -69,10 +69,10 @@ pub async fn list_files(
         let mut files: Vec<FileRes> = Vec::new();
         for dir in extra_paths {
             let walker = WalkDir::new(dir);
-            let entries = walker
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| file_types::matches_file_type(&file_type, e));
+            let entries = walker.into_iter().filter_map(|e| e.ok()).filter(|e| {
+                let not_hidden = e.path().to_str().unwrap_or(".filter").split("/").all(|f| !f.starts_with("."));
+                return file_types::matches_file_type(&file_type, e) && not_hidden;
+            });
 
             for e in entries {
                 let name = match e.file_name().to_str() {
@@ -88,7 +88,7 @@ pub async fn list_files(
                     .ok()
                     .and_then(|meta| meta.created().or_else(|_| meta.modified()).ok())
                     .unwrap_or(SystemTime::UNIX_EPOCH);
-                
+
                 files.push(FileRes {
                     file_name: name,
                     file_path: e.into_path(),
@@ -431,10 +431,11 @@ pub async fn list_dir(
             .into_iter()
             .filter_map(|e| e.ok())
             .filter(|e| {
+                let not_hidden = e.path().to_str().unwrap_or(".filter").split("/").all(|f| !f.starts_with("."));
                 if show_file {
-                    true
+                    return true && not_hidden;
                 } else {
-                    e.file_type().is_dir()
+                    return e.file_type().is_dir();
                 }
             });
         for e in entries {
@@ -450,7 +451,7 @@ pub async fn list_dir(
                     Err(_) => 0,
                 };
                 let clone = e.clone();
-                
+
                 let ext = match clone.path().extension() {
                     Some(str) => match str.to_str() {
                         Some(s) => s,
