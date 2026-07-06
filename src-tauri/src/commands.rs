@@ -70,7 +70,12 @@ pub async fn list_files(
         for dir in extra_paths {
             let walker = WalkDir::new(dir);
             let entries = walker.into_iter().filter_map(|e| e.ok()).filter(|e| {
-                let not_hidden = e.path().to_str().unwrap_or(".filter").split("/").all(|f| !f.starts_with("."));
+                let not_hidden = e
+                    .path()
+                    .to_str()
+                    .unwrap_or(".filter")
+                    .split("/")
+                    .all(|f| !f.starts_with("."));
                 return file_types::matches_file_type(&file_type, e) && not_hidden;
             });
 
@@ -105,6 +110,15 @@ pub async fn list_files(
 }
 
 #[tauri::command]
+pub async fn cancel_upload(app: tauri::AppHandle)-> Result<String, String>{
+    let state = app.state::<Mutex<CancelOngoingUpload>>();
+    let mut cancel = state.lock().await;
+    *cancel = CancelOngoingUpload { val: true };
+
+    Ok("".to_string())
+}
+
+#[tauri::command]
 pub async fn send_file(
     file_path: PathBuf,
     url: String,
@@ -130,7 +144,15 @@ pub async fn send_file(
     let mut reader_stream = ReaderStream::new(file);
     let mut last_emit = Instant::now();
     let progress_stream = stream! {
+
+            let state = app_clone.state::<Mutex<CancelOngoingUpload>>();
+            let mut cancel = state.lock().await;
+
             while let Some(chunk) = reader_stream.next().await {
+            if cancel.val {
+                *cancel = CancelOngoingUpload {val: false};
+                break;
+            };
             if let Ok(ref bytes) = chunk{
                 curr += bytes.len();
                 if last_emit.elapsed() >= Duration::from_millis(100){
@@ -143,9 +165,9 @@ pub async fn send_file(
     };
     let body = Body::wrap_stream(progress_stream);
     let client = ClientBuilder::new()
-    .default_headers(headers)
-    .build()
-    .unwrap();
+        .default_headers(headers)
+        .build()
+        .unwrap();
     match client.post(url).body(body).send().await {
         Ok(_) => {
             let _ = app.emit(
@@ -431,7 +453,12 @@ pub async fn list_dir(
             .into_iter()
             .filter_map(|e| e.ok())
             .filter(|e| {
-                let not_hidden = e.path().to_str().unwrap_or(".filter").split("/").all(|f| !f.starts_with("."));
+                let not_hidden = e
+                    .path()
+                    .to_str()
+                    .unwrap_or(".filter")
+                    .split("/")
+                    .all(|f| !f.starts_with("."));
                 if show_file {
                     return true && not_hidden;
                 } else {

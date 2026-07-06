@@ -1,10 +1,9 @@
 import { FileRes, FileResType } from "../types";
 
-class Queue<T> extends EventTarget {
+class Queue<T> {
   private elements: T[];
   isProcessing: boolean
   constructor(initEls: T[] = []) {
-    super();
     this.elements = initEls;
     this.isProcessing = false
   }

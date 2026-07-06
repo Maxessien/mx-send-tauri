@@ -34,11 +34,14 @@ pub fn run() {
             commands::save_transfer,
             commands::list_dir,
             commands::get_traverse_cache,
-            commands::save_traverse_cache
+            commands::save_traverse_cache,
+            commands::cancel_upload,
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(utils::SessionId(Uuid::new_v4())))
         .manage(Mutex::new(None::<Handle<SocketAddr>>))
+        .manage(Mutex::new(utils::CancelOngoingUpload {val: false}))
+        .manage(Mutex::new(utils::CancelOngoingDownload {val: false}))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

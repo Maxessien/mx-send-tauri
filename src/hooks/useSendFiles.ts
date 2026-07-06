@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
-import { FileRes, FileResType } from "../types";
+import { FileRes, FileResType, Transfer } from "../types";
 import { capitalise } from "../utils/file-utils";
 import { uploadQueue } from "../utils/queue";
 
@@ -9,9 +9,9 @@ const useSendFiles = () => {
   const { isConnected, role, connectionInfo, socket } = useSelector(
     (state: RootState) => state.connection,
   );
-  
+
   const appSession = useSelector((state: RootState) => state.appSession);
-  
+
   const pushUpload = (file: FileRes, type: FileResType) => {
     uploadQueue.push({ file, type });
     if (!uploadQueue.isProcessing) {
@@ -20,12 +20,27 @@ const useSendFiles = () => {
     }
   };
 
-  const handleNext = async ()=>{
-      if (uploadQueue.traverse().length > 0) {
-        const { file, type } = uploadQueue.pop();
-        await sendFile(file, type);
-      } else uploadQueue.isProcessing = false;
-  }
+  const cancelIncomingUpload = (file: FileRes, type: FileResType) => {
+    uploadQueue.removeEl({ file, type });
+    const { file_name, file_path, file_size, type: file_type } = file;
+    socket?.emit("progress", {
+      current: 0,
+      file_name,
+      file_path,
+      file_size,
+      file_type,
+      total: file_size,
+      sender_id: appSession,
+      is_cancelled: true,
+    } as Transfer);
+  };
+
+  const handleNext = async () => {
+    if (uploadQueue.traverse().length > 0) {
+      const { file, type } = uploadQueue.pop();
+      await sendFile(file, type);
+    } else uploadQueue.isProcessing = false;
+  };
 
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
@@ -66,16 +81,15 @@ const useSendFiles = () => {
           );
       }
 
-      await handleNext()
-      
+      await handleNext();
     } catch (err) {
       console.log(err);
-      
-      await handleNext()
+
+      await handleNext();
     }
   };
 
-  return { sendFile, pushUpload };
+  return { sendFile, pushUpload, cancelIncomingUpload };
 };
 
 export default useSendFiles;

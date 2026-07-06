@@ -45,6 +45,14 @@ pub struct DirList {
     pub files: Vec<FileResWithType>,
 }
 
+pub struct CancelOngoingUpload {
+    pub val: bool
+}
+
+pub struct CancelOngoingDownload {
+    pub val: bool
+}
+
 #[cfg(target_os = "android")]
 pub fn get_dirs(_app: &tauri::AppHandle) -> [PathBuf; 4] {
     let dirs = [

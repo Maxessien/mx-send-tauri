@@ -14,7 +14,7 @@ use futures_util::{lock::Mutex, StreamExt};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::{
-    fs::{metadata, File},
+    fs::{File, metadata, remove_file},
     io::AsyncWriteExt,
 };
 use tokio_util::io::ReaderStream;
@@ -53,7 +53,7 @@ pub enum FileType {
 #[derive(Deserialize)]
 pub struct UploadFileQuery {
     pub name: String,
-    // pub size: u64,
+    pub size: u64,
     pub file_type: FileType,
 }
 
@@ -138,11 +138,18 @@ pub async fn upload_file(
     };
 
     let mut body_stream: axum::body::BodyDataStream = body.into_data_stream();
+    let mut uploaded = 0;
     while let Some(chunk) = body_stream.next().await {
         if let Ok(bytes) = chunk {
+            uploaded += bytes.len();
             let _ = file.write_all(&bytes).await;
         }
     }
+
+    // check with a 1MB offset
+    if uploaded < ((query.size - (1024 * 1024)) as usize) {
+        let _ = remove_file(save_dir).await;
+    };
 
     if let Err(_) = file.flush().await {
         return StatusCode::INTERNAL_SERVER_ERROR;

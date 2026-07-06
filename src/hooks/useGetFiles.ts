@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { addManyFiles } from "../store-slices/allFilesSlice";
-import { DirList, FileRes, FileResType } from "../types";
+import { DirList, FileRes, FileResType, Transfer } from "../types";
 import { getRustFileType } from "../utils/file-utils";
 import { downloadQueue } from "../utils/queue";
 
@@ -57,9 +57,11 @@ const useGetFiles = (
 };
 
 const useReceiver = () => {
-  const { role, isConnected, connectionInfo } = useSelector(
+  const { role, isConnected, connectionInfo, socket } = useSelector(
     (state: RootState) => state.connection,
   );
+  
+  const appSession = useSelector((state: RootState) => state.appSession);
 
   const pushDownload = (fileId: string, senderId: string) => {
     downloadQueue.push({ fileId, senderId });
@@ -68,6 +70,21 @@ const useReceiver = () => {
       downloadVideo(fileId, senderId);
     }
   };
+  
+    const cancelIncomingDownload = (fileId: string, senderId: string, file: FileRes) => {
+      downloadQueue.removeEl({ fileId, senderId });
+      const { file_name, file_path, file_size, type: file_type } = file;
+      socket?.emit("progress", {
+        current: 0,
+        file_name,
+        file_path,
+        file_size,
+        file_type,
+        total: file_size,
+        sender_id: appSession,
+        is_cancelled: true,
+      } as Transfer);
+    };
 
   const downloadVideo = async (fileId: string, senderId: string) => {
     if (!isConnected || role !== "receiver") return;
@@ -89,7 +106,7 @@ const useReceiver = () => {
     }
   };
 
-  return { downloadVideo, pushDownload };
+  return { downloadVideo, pushDownload, cancelIncomingDownload };
 };
 
 const useGetDirList = (
