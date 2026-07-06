@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime};
 use tauri::{Emitter, Manager};
 use tokio::fs::write;
-use tokio::{fs::File, io::AsyncWriteExt};
+use tokio::{fs::File, io::AsyncWriteExt, sync::RwLock};
 use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 use walkdir::WalkDir;
@@ -110,9 +110,9 @@ pub async fn list_files(
 }
 
 #[tauri::command]
-pub async fn cancel_upload(app: tauri::AppHandle)-> Result<String, String>{
-    let state = app.state::<Mutex<CancelOngoingUpload>>();
-    let mut cancel = state.lock().await;
+pub async fn cancel_upload(app: tauri::AppHandle) -> Result<String, String> {
+    let state = app.state::<RwLock<CancelOngoingUpload>>();
+    let mut cancel = state.write().await;
     *cancel = CancelOngoingUpload { val: true };
 
     Ok("".to_string())
@@ -145,14 +145,18 @@ pub async fn send_file(
     let mut last_emit = Instant::now();
     let progress_stream = stream! {
 
-            let state = app_clone.state::<Mutex<CancelOngoingUpload>>();
-            let mut cancel = state.lock().await;
+            let state = app_clone.state::<RwLock<CancelOngoingUpload>>();
 
             while let Some(chunk) = reader_stream.next().await {
-            if cancel.val {
-                *cancel = CancelOngoingUpload {val: false};
+
+            let cancelled = state.read().await.val;
+            
+            if cancelled {
+                let mut up = state.write().await;
+                *up = CancelOngoingUpload {val: false};
                 break;
             };
+            
             if let Ok(ref bytes) = chunk{
                 curr += bytes.len();
                 if last_emit.elapsed() >= Duration::from_millis(100){

@@ -147,7 +147,7 @@ pub async fn upload_file(
     }
 
     // check with a 1MB offset
-    if uploaded < ((query.size - (1024 * 1024)) as usize) {
+    if uploaded < ((query.size.saturating_sub(1024 * 1024)) as usize) {
         let _ = remove_file(save_dir).await;
     };
 

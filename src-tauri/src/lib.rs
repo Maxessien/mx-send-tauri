@@ -2,6 +2,7 @@
 
 use crate::axum::AllowedFileList;
 use futures_util::lock::Mutex;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 use std::net::SocketAddr;
 use axum_server::Handle;
@@ -40,8 +41,8 @@ pub fn run() {
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(utils::SessionId(Uuid::new_v4())))
         .manage(Mutex::new(None::<Handle<SocketAddr>>))
-        .manage(Mutex::new(utils::CancelOngoingUpload {val: false}))
-        .manage(Mutex::new(utils::CancelOngoingDownload {val: false}))
+        .manage(RwLock::new(utils::CancelOngoingUpload {val: false}))
+        .manage(RwLock::new(utils::CancelOngoingDownload {val: false}))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
