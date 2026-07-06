@@ -20,6 +20,13 @@ const useSendFiles = () => {
     }
   };
 
+  const handleNext = async ()=>{
+      if (uploadQueue.traverse().length > 0) {
+        const { file, type } = uploadQueue.pop();
+        await sendFile(file, type);
+      } else uploadQueue.isProcessing = false;
+  }
+
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
     if (!uploadQueue.isProcessing) uploadQueue.isProcessing = true;
@@ -59,13 +66,12 @@ const useSendFiles = () => {
           );
       }
 
-      if (uploadQueue.traverse().length > 0) {
-        const { file, type } = uploadQueue.pop();
-        await sendFile(file, type);
-      } else uploadQueue.isProcessing = false;
-
+      await handleNext()
+      
     } catch (err) {
       console.log(err);
+      
+      await handleNext()
     }
   };
 
