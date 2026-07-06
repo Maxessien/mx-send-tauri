@@ -141,7 +141,7 @@ pub async fn send_file(
     let app_clone = app.clone();
     let file_info_clone = file_info.clone();
     let mut curr = 0;
-    let mut reader_stream = ReaderStream::new(file);
+    let mut reader_stream = ReaderStream::with_capacity(file, 256 * 1024);
     let mut last_emit = Instant::now();
     let progress_stream = stream! {
 
