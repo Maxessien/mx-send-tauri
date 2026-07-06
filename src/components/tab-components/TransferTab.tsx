@@ -89,13 +89,21 @@ const TransferTab = () => {
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
             .map((file) => {
-              const { file_name, file_path, current, total } = file;
+              const { file_name, file_path, current, total, is_cancelled } =
+                file;
               return (
                 <div
                   key={file_name + file_path}
                   className="relative w-full rounded-md"
                 >
                   <TransferTabItem file={file} />
+                  {is_cancelled && (
+                    <div className="w-full h-full flex justify-center items-center backdrop-blur-lg">
+                      <p className="text-red-700 font-medium text-2xl">
+                        Cancelled
+                      </p>
+                    </div>
+                  )}
                   <div
                     style={{
                       width: `${current >= total ? "100" : (current / total) * 100}%`,

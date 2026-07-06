@@ -100,6 +100,7 @@ pub async fn create_server(app_handle: AppHandle) -> String {
         let app = Router::new()
             .route("/upload", post(handler::add_to_filelist))
             .route("/download", get(handler::download_from_filelist))
+            .route("/allowedinfo", get(handler::get_allowed_list_info))
             .route("/receiver/upload", post(handler::upload_file))
             .route_layer(middleware::from_fn_with_state(
                 app_handle.clone(),

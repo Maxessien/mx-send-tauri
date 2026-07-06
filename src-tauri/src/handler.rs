@@ -1,25 +1,28 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    time::SystemTime,
+};
 
 use axum::{
     body::Body,
     extract::{Json, Query, State},
-    http::{Response, StatusCode, header},
+    http::{header, Response, StatusCode},
     middleware::Next,
     response::IntoResponse,
 };
-use futures_util::{StreamExt, lock::Mutex};
+use futures_util::{lock::Mutex, StreamExt};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::{
     fs::{metadata, File},
     io::AsyncWriteExt,
 };
-use tokio_util::io::{ReaderStream};
+use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 
-use crate::{axum::AllowedFileList, file_types};
-use crate::file_types::folder_name;
+use crate::file_types::{folder_name, parse_file_type};
 use crate::utils::SessionId;
+use crate::{axum::AllowedFileList, file_types, utils::FileResWithType};
 
 type HttpRequest = axum::http::Request<Body>;
 
@@ -39,9 +42,7 @@ pub struct DownloadErrResponse {
     pub message: String,
 }
 
-#[derive(Clone)]
-#[derive(Deserialize)]
-#[derive(Serialize)]
+#[derive(Clone, Deserialize, Serialize, Copy)]
 pub enum FileType {
     Audio,
     Video,
@@ -127,21 +128,21 @@ pub async fn upload_file(
     save_dir.push(safe_name);
 
     save_dir = match file_types::handle_duplicate_path(save_dir) {
-        Ok(path)=>path,
-        Err(_)=>return StatusCode::INTERNAL_SERVER_ERROR
+        Ok(path) => path,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
     };
 
     let mut file = match File::create_new(&save_dir).await {
         Ok(f) => f,
         Err(_) => return StatusCode::CONFLICT,
     };
-    
+
     let mut body_stream: axum::body::BodyDataStream = body.into_data_stream();
     while let Some(chunk) = body_stream.next().await {
         if let Ok(bytes) = chunk {
             let _ = file.write_all(&bytes).await;
-        } 
-    };
+        }
+    }
 
     if let Err(_) = file.flush().await {
         return StatusCode::INTERNAL_SERVER_ERROR;
@@ -181,10 +182,32 @@ pub async fn add_to_filelist(
         size: size,
         id: file_id,
         path: file_pt.path,
-        file_type: file_pt.file_type
+        file_type: file_pt.file_type,
     });
 
     (StatusCode::CREATED, file_id.to_string())
+}
+
+pub async fn get_allowed_list_info(
+    State(app): State<AppHandle>,
+    Json(file_id): Json<Uuid>,
+) -> (StatusCode, impl IntoResponse) {
+    let state = app.state::<Mutex<AllowedFileList>>();
+    let allowed = state.lock().await;
+
+    let requested = allowed
+        .list
+        .iter()
+        .find(|item| file_id == item.id)
+        .map(|item| FileResWithType {
+            file_name: item.name.clone(),
+            file_size: item.size,
+            file_path: item.path.clone(),
+            file_type: parse_file_type(item.file_type).to_string(),
+            last_modified: SystemTime::UNIX_EPOCH,
+        });
+
+    (StatusCode::OK, Json(requested))
 }
 
 pub async fn download_from_filelist(
@@ -223,12 +246,15 @@ pub async fn download_from_filelist(
                         )
                         .header("file_size", info.size)
                         .header("file_name", info.name)
-                        .header("file_type", match info.file_type {
-                            FileType::Audio => "audio",
-                            FileType::Image => "image",
-                            FileType::Document => "document",
-                            FileType::Video => "video",
-                        })
+                        .header(
+                            "file_type",
+                            match info.file_type {
+                                FileType::Audio => "audio",
+                                FileType::Image => "image",
+                                FileType::Document => "document",
+                                FileType::Video => "video",
+                            },
+                        )
                         .body(body)
                 }
                 Err(_) => {

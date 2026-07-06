@@ -47,6 +47,16 @@ pub fn get_file_type(ext: &str) -> &'static str {
         "document"
     }
 }
+
+pub fn parse_file_type(ftype: FileType) -> &'static str{
+    match ftype {
+        FileType::Audio => "audio",
+        FileType::Video => "video",
+        FileType::Image => "image",
+        _ => "document"
+    }
+}
+
 pub fn extensions_for(file_type: &FileType) -> Option<&'static [&'static str]> {
     match file_type {
         FileType::Audio => Some(AUDIO_EXTS),

@@ -43,6 +43,7 @@ export interface Transfer extends FileRes {
   total: number;
   sender_id: string;
   file_type?: FileResType
+  is_cancelled: boolean
 }
 
 export interface AllFilesState {

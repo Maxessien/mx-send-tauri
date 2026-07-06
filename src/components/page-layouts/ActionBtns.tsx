@@ -9,7 +9,7 @@ import useSendFiles from "../../hooks/useSendFiles";
 import { RootState } from "../../store";
 import { removeSelected } from "../../store-slices/allFilesSlice";
 import { setConnection } from "../../store-slices/connectionSlice";
-import { ConnectionInfo } from "../../types";
+import { ConnectionInfo, Transfer } from "../../types";
 import Button from "../reusable-components/Button";
 import { ScannerState } from "./AppWrapper";
 
@@ -32,6 +32,7 @@ const ActionBtns = ({
     (state: RootState) => state.connection,
   );
   const selected = useSelector((state: RootState) => state.allFiles.selected);
+  const appSenderId = useSelector((state: RootState) => state.appSession);
   const [sending, setSending] = useState(false);
 
   const dispatch = useDispatch();
@@ -43,7 +44,20 @@ const ActionBtns = ({
       setSending(true);
       selected.forEach((s) => {
         dispatch(removeSelected(s));
+        const {file_name, file_path, file_size, type} = s
+
+        //Emit init progress for each
+        socket?.emit("progress", {
+          current: 0,
+          file_name,
+          file_path,
+          file_size,
+          file_type: type,
+          total: file_size,
+          sender_id: appSenderId, is_cancelled: false
+        } as Transfer)
       });
+
       await Promise.all(
         selected.map((file) => {
           return pushUpload(file, file.type);

@@ -33,6 +33,11 @@ class Queue<T> extends EventTarget {
         .slice(0, idx)
         .concat(this.elements.slice(idx + 1));
   }
+
+  removeEl(el: T) {
+    const idx = this.elements.indexOf(el)
+    if (idx >= 0) this.removeAt(idx)
+  }
 }
 
 export const downloadQueue = new Queue<{ fileId: string; senderId: string }>();

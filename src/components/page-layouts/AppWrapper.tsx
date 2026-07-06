@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 import { useReceiver } from "../../hooks/useGetFiles";
 import useWebsocket from "../../hooks/useWebsocket";
 import { RootState } from "../../store";
-import { DownloadProgress, FileRes, UploadProgress } from "../../types";
+import { DirListFile, DownloadProgress, FileRes, Transfer, UploadProgress } from "../../types";
 import ActionBtns from "./ActionBtns";
 import AppHeader from "./AppHeader";
 import AppNavItem from "./AppNavItem";
@@ -71,14 +71,35 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
 
     if (isConnected && role === "receiver" && socket) {
       socket.emit("newConnection", connectionInfo.session_id);
-      socket.on("newFile", (data: { file_id: string; sender_id: string }) => {
+      socket.on("newFile", async(data: { file_id: string; sender_id: string }) => {
+        const res = await fetch(`http://${connectionInfo.ip_address}:${connectionInfo.port}/allowedinfo`, {
+          body: JSON.stringify(data.file_id),
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${connectionInfo.session_id}`,
+            "Content-Type": "application/json",
+          }
+        })
+
+        const {file_name, file_path, file_size, file_type}: DirListFile = await res.json()
+        
+        socket?.emit("progress", {
+          current: 0,
+          file_name,
+          file_path,
+          file_size,
+          file_type,
+          total: file_size,
+          sender_id: appSessionId, is_cancelled: false
+        } as Transfer);
+
         pushDownload(data.file_id, data.sender_id);
       });
       listen<DownloadProgress>("download_progress", (event) => {
         const progress = event.payload;
         socket?.emit("progress", {
-          ...progress,
-        });
+          ...progress, is_cancelled: false
+        } as Transfer);
       })
         .then((unlisten) => {
           if (isMounted) unlistenTauri.push(unlisten);
@@ -100,8 +121,8 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           file_size,
           file_type: type,
           total: file_size,
-          sender_id: appSessionId,
-        });
+          sender_id: appSessionId, is_cancelled: false
+        } as Transfer);
       })
         .then((unlisten) => {
           if (isMounted) unlistenTauri.push(unlisten);
