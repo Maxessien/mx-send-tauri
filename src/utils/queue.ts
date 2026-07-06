@@ -2,9 +2,11 @@ import { FileRes, FileResType } from "../types";
 
 class Queue<T> extends EventTarget {
   private elements: T[];
+  isProcessing: boolean
   constructor(initEls: T[] = []) {
     super();
     this.elements = initEls;
+    this.isProcessing = false
   }
 
   traverse() {
@@ -28,12 +30,8 @@ class Queue<T> extends EventTarget {
   removeAt(idx: number) {
     if (this.elements[idx])
       this.elements = this.elements
-        .splice(0, idx)
-        .concat(this.elements.splice(idx + 1));
-  }
-
-  modify() {
-    return this.elements;
+        .slice(0, idx)
+        .concat(this.elements.slice(idx + 1));
   }
 }
 

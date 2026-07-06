@@ -61,11 +61,9 @@ const useReceiver = () => {
     (state: RootState) => state.connection,
   );
 
-  const [isReceiving, setIsReceiving] = useState(false);
-
   const pushDownload = (fileId: string, senderId: string) => {
     downloadQueue.push({ fileId, senderId });
-    if (!isReceiving) {
+    if (!downloadQueue.isProcessing) {
       const { fileId, senderId } = downloadQueue.pop();
       downloadVideo(fileId, senderId);
     }
@@ -73,7 +71,7 @@ const useReceiver = () => {
 
   const downloadVideo = async (fileId: string, senderId: string) => {
     if (!isConnected || role !== "receiver") return;
-    if (!isReceiving) setIsReceiving(true);
+    if (!downloadQueue.isProcessing) downloadQueue.isProcessing = true;
     try {
       await invoke("download_file_from_sender", {
         url: `http://${connectionInfo.ip_address}:${connectionInfo.port}/download?id=${fileId}`,
@@ -84,7 +82,7 @@ const useReceiver = () => {
       if (downloadQueue.traverse().length > 0) {
         const { fileId, senderId } = downloadQueue.pop();
         downloadVideo(fileId, senderId);
-      } else setIsReceiving(false);
+      } else downloadQueue.isProcessing = false;
 
     } catch (err) {
       console.log(err);

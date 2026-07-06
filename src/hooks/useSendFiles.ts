@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { FileRes, FileResType } from "../types";
 import { capitalise } from "../utils/file-utils";
-import { useState } from "react";
 import { uploadQueue } from "../utils/queue";
 
 const useSendFiles = () => {
@@ -13,11 +12,9 @@ const useSendFiles = () => {
   
   const appSession = useSelector((state: RootState) => state.appSession);
   
-  const [isSending, setIsSending] = useState(false);
-
   const pushUpload = (file: FileRes, type: FileResType) => {
     uploadQueue.push({ file, type });
-    if (!isSending) {
+    if (!uploadQueue.isProcessing) {
       const { file, type } = uploadQueue.pop();
       sendFile(file, type);
     }
@@ -25,7 +22,7 @@ const useSendFiles = () => {
 
   const sendFile = async (file: FileRes, type: FileResType) => {
     if (!isConnected) return false;
-    if (!isSending) setIsSending(true);
+    if (!uploadQueue.isProcessing) uploadQueue.isProcessing = true;
     try {
       const path =
         role === "receiver"
@@ -65,7 +62,7 @@ const useSendFiles = () => {
       if (uploadQueue.traverse().length > 0) {
         const { file, type } = uploadQueue.pop();
         await sendFile(file, type);
-      } else setIsSending(false);
+      } else uploadQueue.isProcessing = false;
 
     } catch (err) {
       console.log(err);
