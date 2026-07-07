@@ -10,7 +10,7 @@ import {
 } from "../types";
 
 export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
-  audio: "/audio-icon.jpg",
+  audio: "/audio-icon.png",
   video: "/icons8-video-100.png",
   document: "/document-icon.png",
   image: "/icons8-image-100.png",
