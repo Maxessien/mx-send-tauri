@@ -1,6 +1,5 @@
 use std::{
-    path::{Path, PathBuf},
-    time::SystemTime,
+    path::{Path, PathBuf}, time::SystemTime
 };
 
 use axum::{
@@ -15,12 +14,12 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::{
     fs::{File, metadata, remove_file},
-    io::AsyncWriteExt,
+    io::AsyncWriteExt, sync::RwLock
 };
 use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 
-use crate::file_types::{folder_name, parse_file_type};
+use crate::{file_types::{folder_name, parse_file_type}, utils::CancelOngoingDownload};
 use crate::utils::SessionId;
 use crate::{axum::AllowedFileList, file_types, utils::FileResWithType};
 
@@ -139,7 +138,23 @@ pub async fn upload_file(
 
     let mut body_stream: axum::body::BodyDataStream = body.into_data_stream();
     let mut uploaded = 0;
+
+    let state = app.state::<RwLock<CancelOngoingDownload>>();
+
+    {
+        let mut reset = state.write().await;
+        *reset = CancelOngoingDownload {val: false}
+    }
+
     while let Some(chunk) = body_stream.next().await {
+        let cancelled = state.read().await;
+        if cancelled.val {
+            let mut reset = state.write().await;
+            *reset = CancelOngoingDownload {val: false};
+            let _ = remove_file(save_dir).await;
+            return StatusCode::OK;
+        };
+
         if let Ok(bytes) = chunk {
             uploaded += bytes.len();
             let _ = file.write_all(&bytes).await;

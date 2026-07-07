@@ -9,6 +9,7 @@ import {
   FILE_PREVIEW_IMAGES,
   formatFileSize,
 } from "../../utils/file-utils";
+import { invoke } from "@tauri-apps/api/core";
 
 export const TransferTabItem = ({
   file,
@@ -46,6 +47,7 @@ const TransferTab = () => {
     (state: RootState) => state.allFiles.transferring,
   );
   const appSessionId = useSelector((state: RootState) => state.appSession);
+  const {role} = useSelector((state: RootState) => state.connection);
   const [activeTransferTab, setActiveTransferTab] = useState<
     "sending" | "receiving"
   >("receiving");
@@ -56,6 +58,28 @@ const TransferTab = () => {
       : fileSessId !== appSessionId;
   };
   const navigate = useNavigate();
+
+
+  // const callCancel = async(is_transferring: boolean)=>{
+  //   switch (activeTransferTab) {
+  //     case "receiving":
+  //       if (is_transferring) {
+  //         switch (role) {
+  //           case "receiver":
+  //             await invoke("")
+  //             break;
+          
+  //           default:
+  //             break;
+  //         }
+  //       }
+  //       break;
+    
+  //     default:
+  //       break;
+  //   }
+  // }
+
   return (
     <section className="w-full space-y-3">
       <p className="w-full flex justify-start items-center gap-2">
