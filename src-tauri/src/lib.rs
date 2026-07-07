@@ -37,6 +37,7 @@ pub fn run() {
             commands::get_traverse_cache,
             commands::save_traverse_cache,
             commands::cancel_upload,
+            commands::cancel_download,
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(utils::SessionId(Uuid::new_v4())))

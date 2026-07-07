@@ -7,7 +7,7 @@ use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime};
 use tauri::{Emitter, Manager};
-use tokio::fs::write;
+use tokio::fs::{remove_file, write};
 use tokio::{fs::File, io::AsyncWriteExt, sync::RwLock};
 use tokio_util::io::ReaderStream;
 use uuid::Uuid;
@@ -119,6 +119,15 @@ pub async fn cancel_upload(app: tauri::AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn cancel_download(app: tauri::AppHandle) -> Result<String, String> {
+    let state = app.state::<RwLock<CancelOngoingDownload>>();
+    let mut cancel = state.write().await;
+    *cancel = CancelOngoingDownload { val: true };
+
+    Ok("".to_string())
+}
+
+#[tauri::command]
 pub async fn send_file(
     file_path: PathBuf,
     url: String,
@@ -138,6 +147,13 @@ pub async fn send_file(
         Ok(f) => f,
         Err(_) => return Err(String::from("File not found")),
     };
+    
+    {
+        let state = app.state::<RwLock<CancelOngoingUpload>>();
+        let mut reset = state.write().await;
+        *reset = CancelOngoingUpload { val: false };
+    }
+    
     let app_clone = app.clone();
     let file_info_clone = file_info.clone();
     let mut curr = 0;
@@ -279,8 +295,23 @@ pub async fn download_file_from_sender(
 
     let mut current = 0;
     let mut last_emit = Instant::now();
+    let state = app_handle.state::<RwLock<CancelOngoingDownload>>();
+
+    {
+        let mut reset = state.write().await;
+        *reset = CancelOngoingDownload { val: false };
+    }
+    
     while let Some(chunk) = res.chunk().await.map_err(|e| e.to_string())? {
-        if file.write_all(&chunk).await.is_err() {
+
+            let cancelled = state.read().await.val;
+            
+            if cancelled {
+                let mut up = state.write().await;
+                *up = CancelOngoingDownload {val: false};
+                let _ = remove_file(download_dir).await;
+                return Ok("Download cancelled".to_string());
+            };        if file.write_all(&chunk).await.is_err() {
             return Err("Failed to write to file".to_string());
         }
         current += chunk.len() as u64;
