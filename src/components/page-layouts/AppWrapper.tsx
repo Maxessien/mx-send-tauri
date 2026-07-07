@@ -92,7 +92,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           file_size,
           file_type,
           total: file_size,
-          sender_id: appSessionId, is_cancelled: false
+          sender_id: appSessionId, is_cancelled: false, is_transferring: false
         } as Transfer);
 
         pushDownload(data.file_id, data.sender_id, {...f, type: f.file_type});
@@ -100,7 +100,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
       listen<DownloadProgress>("download_progress", (event) => {
         const progress = event.payload;
         socket?.emit("progress", {
-          ...progress, is_cancelled: false
+          ...progress, is_cancelled: false, is_transferring: progress.current < progress.file_size
         } as Transfer);
       })
         .then((unlisten) => {
@@ -123,7 +123,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           file_size,
           file_type: type,
           total: file_size,
-          sender_id: appSessionId, is_cancelled: false
+          sender_id: appSessionId, is_cancelled: false, is_transferring: current < file_size
         } as Transfer);
       })
         .then((unlisten) => {

@@ -20,10 +20,10 @@ export const TransferTabItem = ({
   file,
   cancelTrans,
 }: {
-  file: Omit<Transfer, "current" | "total" | "sender_id" | "last_modified">;
+  file: Omit<Transfer, "sender_id" | "last_modified">;
   cancelTrans: () => void;
 }) => {
-  const { file_name, file_size, type, file_type } = file;
+  const { file_name, file_size, type, file_type, is_cancelled, current, total } = file;
   return (
     <div className="flex w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
       <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
@@ -45,7 +45,7 @@ export const TransferTabItem = ({
           {formatFileSize(file_size)}
         </p>
       </div>
-      <div>
+      {(!is_cancelled && current < total) && <div>
         <Button
           usePredefinedSize={false}
           attrs={{ onClick: cancelTrans }}
@@ -53,7 +53,7 @@ export const TransferTabItem = ({
         >
           <HiX />
         </Button>
-      </div>
+      </div>}
     </div>
   );
 };
@@ -78,17 +78,17 @@ const TransferTab = () => {
   };
   const navigate = useNavigate();
 
-  const callCancel = async (is_transferring: boolean, f: Transfer) => {
+  const callCancel = async (f: Transfer) => {
     switch (activeTransferTab) {
       case "receiving":
-        if (is_transferring) {
+        if (f.is_transferring) {
           await invoke("cancel_download");
           emitCancelEvent(f, socket);
         } else cancelIncomingDownload(f);
         break;
 
       case "sending":
-        if (is_transferring) {
+        if (f.is_transferring) {
           await invoke("cancel_upload");
           emitCancelEvent(f, socket);
         } else cancelIncomingUpload(f);
@@ -139,7 +139,7 @@ const TransferTab = () => {
                   key={file_name + file_path}
                   className="relative w-full rounded-md"
                 >
-                  <TransferTabItem file={file} cancelTrans={() => callCancel((current > (1024 * 1024)), file)} />
+                  <TransferTabItem file={file} cancelTrans={() => callCancel(file)} />
                   {is_cancelled && (
                     <div className="w-full h-full flex justify-center items-center backdrop-blur-lg">
                       <p className="text-red-700 font-medium text-2xl">

@@ -44,6 +44,7 @@ export interface Transfer extends FileRes {
   sender_id: string;
   file_type?: FileResType
   is_cancelled: boolean
+  is_transferring: boolean
 }
 
 export interface AllFilesState {

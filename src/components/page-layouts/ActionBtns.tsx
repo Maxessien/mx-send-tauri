@@ -54,7 +54,7 @@ const ActionBtns = ({
           file_size,
           file_type: type,
           total: file_size,
-          sender_id: appSenderId, is_cancelled: false
+          sender_id: appSenderId, is_cancelled: false, is_transferring: false
         } as Transfer)
       });
 

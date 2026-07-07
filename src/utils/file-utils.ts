@@ -102,7 +102,15 @@ export const sortTransferred = (infos: FileTransferred[]) => {
 };
 
 export const emitCancelEvent = (f: Transfer, socket: Socket | null) => {
-  const { current, file_name, file_path, file_size, type, sender_id } = f;
+  const {
+    current,
+    file_name,
+    file_path,
+    file_size,
+    type,
+    sender_id,
+    last_modified,
+  } = f;
   socket?.emit("progress", {
     current,
     file_name,
@@ -112,6 +120,9 @@ export const emitCancelEvent = (f: Transfer, socket: Socket | null) => {
     total: file_size,
     sender_id,
     is_cancelled: true,
+    is_transferring: false,
+    last_modified,
+    type,
   } as Transfer);
 };
 
