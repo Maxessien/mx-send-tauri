@@ -32,14 +32,9 @@ class Queue<T> {
         .slice(0, idx)
         .concat(this.elements.slice(idx + 1));
   }
-
-  removeEl(el: T) {
-    const idx = this.elements.indexOf(el)
-    if (idx >= 0) this.removeAt(idx)
-  }
 }
 
-export const downloadQueue = new Queue<{ fileId: string; senderId: string }>();
+export const downloadQueue = new Queue<{ fileId: string; senderId: string, file: FileRes }>();
 export const uploadQueue = new Queue<{ file: FileRes; type: FileResType }>();
 
 export default Queue;

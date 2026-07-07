@@ -81,7 +81,9 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           }
         })
 
-        const {file_name, file_path, file_size, file_type}: DirListFile = await res.json()
+        const f: DirListFile = await res.json()
+
+        const {file_name, file_path, file_size, file_type} = f
         
         socket?.emit("progress", {
           current: 0,
@@ -93,7 +95,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           sender_id: appSessionId, is_cancelled: false
         } as Transfer);
 
-        pushDownload(data.file_id, data.sender_id);
+        pushDownload(data.file_id, data.sender_id, {...f, type: f.file_type});
       });
       listen<DownloadProgress>("download_progress", (event) => {
         const progress = event.payload;

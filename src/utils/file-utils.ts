@@ -1,3 +1,4 @@
+import { Socket } from "socket.io-client";
 import {
   AppSettings,
   FileResRaw,
@@ -99,6 +100,21 @@ export const sortTransferred = (infos: FileTransferred[]) => {
   });
   return sorted;
 };
+
+export const emitCancelEvent = (f: Transfer, socket: Socket | null) => {
+  const { current, file_name, file_path, file_size, type, sender_id } = f;
+  socket?.emit("progress", {
+    current,
+    file_name,
+    file_path,
+    file_size,
+    file_type: type,
+    total: file_size,
+    sender_id,
+    is_cancelled: true,
+  } as Transfer);
+};
+
 export const defaultSettings: AppSettings = {
   cacheTraversalResult: true,
   keepScreenAwake: true,

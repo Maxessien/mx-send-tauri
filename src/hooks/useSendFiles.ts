@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
-import { FileRes, FileResType, Transfer } from "../types";
-import { capitalise } from "../utils/file-utils";
+import { FileRes, FileResType } from "../types";
+import { capitalise, emitCancelEvent } from "../utils/file-utils";
 import { uploadQueue } from "../utils/queue";
 
 const useSendFiles = () => {
@@ -20,19 +20,42 @@ const useSendFiles = () => {
     }
   };
 
-  const cancelIncomingUpload = (file: FileRes, type: FileResType) => {
-    uploadQueue.removeEl({ file, type });
-    const { file_name, file_path, file_size, type: file_type } = file;
-    socket?.emit("progress", {
-      current: 0,
-      file_name,
-      file_path,
-      file_size,
-      file_type,
-      total: file_size,
-      sender_id: appSession,
-      is_cancelled: true,
-    } as Transfer);
+  const cancelIncomingUpload = (file: FileRes) => {
+    let idx = -1;
+    for (const [i, val] of uploadQueue.traverse().entries()) {
+      idx = i;
+      if (
+        val.file.file_path === file.file_path &&
+        val.file.file_name === file.file_name
+      )
+        break;
+    }
+    if (idx >= 0) {
+      uploadQueue.removeAt(idx);
+
+      const {
+        file_name,
+        file_path,
+        file_size,
+        type: file_type,
+        last_modified,
+      } = file;
+
+      emitCancelEvent(
+        {
+          current: 0,
+          file_name,
+          file_path,
+          file_size,
+          type: file_type,
+          total: file_size,
+          sender_id: appSession,
+          is_cancelled: true,
+          last_modified,
+        },
+        socket,
+      );
+    }
   };
 
   const handleNext = async () => {

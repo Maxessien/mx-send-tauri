@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { addManyFiles } from "../store-slices/allFilesSlice";
-import { DirList, FileRes, FileResType, Transfer } from "../types";
-import { getRustFileType } from "../utils/file-utils";
+import { DirList, FileRes, FileResType } from "../types";
+import { emitCancelEvent, getRustFileType } from "../utils/file-utils";
 import { downloadQueue } from "../utils/queue";
 
 const useGetFiles = (
@@ -60,31 +60,52 @@ const useReceiver = () => {
   const { role, isConnected, connectionInfo, socket } = useSelector(
     (state: RootState) => state.connection,
   );
-  
+
   const appSession = useSelector((state: RootState) => state.appSession);
 
-  const pushDownload = (fileId: string, senderId: string) => {
-    downloadQueue.push({ fileId, senderId });
+  const pushDownload = (fileId: string, senderId: string, file: FileRes) => {
+    downloadQueue.push({ fileId, senderId, file });
     if (!downloadQueue.isProcessing) {
       const { fileId, senderId } = downloadQueue.pop();
       downloadVideo(fileId, senderId);
     }
   };
-  
-    const cancelIncomingDownload = (fileId: string, senderId: string, file: FileRes) => {
-      downloadQueue.removeEl({ fileId, senderId });
-      const { file_name, file_path, file_size, type: file_type } = file;
-      socket?.emit("progress", {
-        current: 0,
+
+  const cancelIncomingDownload = (file: FileRes) => {
+    let idx = -1;
+    for (const [i, val] of downloadQueue.traverse().entries()) {
+      idx = i;
+      if (
+        val.file.file_path === file.file_path &&
+        val.file.file_name === file.file_name
+      )
+        break;
+    }
+    if (idx >= 0) {
+      downloadQueue.removeAt(idx);
+      const {
         file_name,
         file_path,
         file_size,
-        file_type,
-        total: file_size,
-        sender_id: appSession,
-        is_cancelled: true,
-      } as Transfer);
-    };
+        type: file_type,
+        last_modified,
+      } = file;
+      emitCancelEvent(
+        {
+          current: 0,
+          file_name,
+          file_path,
+          file_size,
+          type: file_type,
+          total: file_size,
+          sender_id: appSession,
+          is_cancelled: true,
+          last_modified,
+        },
+        socket,
+      );
+    }
+  };
 
   const downloadVideo = async (fileId: string, senderId: string) => {
     if (!isConnected || role !== "receiver") return;
@@ -100,7 +121,6 @@ const useReceiver = () => {
         const { fileId, senderId } = downloadQueue.pop();
         downloadVideo(fileId, senderId);
       } else downloadQueue.isProcessing = false;
-
     } catch (err) {
       console.log(err);
     }

@@ -6,15 +6,22 @@ import { RootState } from "../../store";
 import { Transfer } from "../../types";
 import {
   capitalise,
+  emitCancelEvent,
   FILE_PREVIEW_IMAGES,
   formatFileSize,
 } from "../../utils/file-utils";
 import { invoke } from "@tauri-apps/api/core";
+import Button from "../reusable-components/Button";
+import { HiX } from "react-icons/hi";
+import { useReceiver } from "../../hooks/useGetFiles";
+import useSendFiles from "../../hooks/useSendFiles";
 
 export const TransferTabItem = ({
   file,
+  cancelTrans,
 }: {
   file: Omit<Transfer, "current" | "total" | "sender_id" | "last_modified">;
+  cancelTrans: () => void;
 }) => {
   const { file_name, file_size, type, file_type } = file;
   return (
@@ -30,13 +37,22 @@ export const TransferTabItem = ({
           alt={`${file_type || type || "file"} preview icon`}
         />
       </div>
-      <div className="space-y-2 min-w-20 flex-1">
+      <div className="space-y-2 flex-1">
         <p className="sm:text-base text-sm line-clamp-2 font-medium text-left">
           {file_name}
         </p>
         <p className="text-sm line-clamp-2 font-medium text-left">
           {formatFileSize(file_size)}
         </p>
+      </div>
+      <div>
+        <Button
+          usePredefinedSize={false}
+          attrs={{ onClick: cancelTrans }}
+          className="p-3 rounded-md"
+        >
+          <HiX />
+        </Button>
       </div>
     </div>
   );
@@ -47,10 +63,13 @@ const TransferTab = () => {
     (state: RootState) => state.allFiles.transferring,
   );
   const appSessionId = useSelector((state: RootState) => state.appSession);
-  const {role} = useSelector((state: RootState) => state.connection);
+  const { socket } = useSelector((state: RootState) => state.connection);
   const [activeTransferTab, setActiveTransferTab] = useState<
     "sending" | "receiving"
   >("receiving");
+
+  const { cancelIncomingDownload } = useReceiver();
+  const { cancelIncomingUpload } = useSendFiles();
 
   const tabFilter = (fileSessId: string) => {
     return activeTransferTab === "sending"
@@ -59,26 +78,26 @@ const TransferTab = () => {
   };
   const navigate = useNavigate();
 
+  const callCancel = async (is_transferring: boolean, f: Transfer) => {
+    switch (activeTransferTab) {
+      case "receiving":
+        if (is_transferring) {
+          await invoke("cancel_download");
+          emitCancelEvent(f, socket);
+        } else cancelIncomingDownload(f);
+        break;
 
-  // const callCancel = async(is_transferring: boolean)=>{
-  //   switch (activeTransferTab) {
-  //     case "receiving":
-  //       if (is_transferring) {
-  //         switch (role) {
-  //           case "receiver":
-  //             await invoke("")
-  //             break;
-          
-  //           default:
-  //             break;
-  //         }
-  //       }
-  //       break;
-    
-  //     default:
-  //       break;
-  //   }
-  // }
+      case "sending":
+        if (is_transferring) {
+          await invoke("cancel_upload");
+          emitCancelEvent(f, socket);
+        } else cancelIncomingUpload(f);
+        break;
+
+      default:
+        break;
+    }
+  };
 
   return (
     <section className="w-full space-y-3">
@@ -120,7 +139,7 @@ const TransferTab = () => {
                   key={file_name + file_path}
                   className="relative w-full rounded-md"
                 >
-                  <TransferTabItem file={file} />
+                  <TransferTabItem file={file} cancelTrans={() => callCancel((current > (1024 * 1024)), file)} />
                   {is_cancelled && (
                     <div className="w-full h-full flex justify-center items-center backdrop-blur-lg">
                       <p className="text-red-700 font-medium text-2xl">
