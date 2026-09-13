@@ -56,7 +56,7 @@ const NewUpdatePopup = ({
           <div className="relative flex items-center">
             <input
               type="checkbox"
-              disabled={toggActive}
+              disabled={!toggActive}
               checked={togg}
               onChange={handleCheckboxChange}
               className="peer sr-only"
