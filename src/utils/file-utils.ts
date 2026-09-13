@@ -161,7 +161,7 @@ export const hasUpdate = async ({version, show}: {version: string, show: boolean
     
     const res = await fetch(GITHUB_RELEASE_API, { method: "GET", signal: AbortSignal.timeout(10000) });
 
-    if (!res.ok) throw new Error(await res.json())
+    if (!res.ok) throw new Error("Failed to fetch latest release")
 
     const latestVersion = ((await res.json()).tag_name as string).replace(/^v/, "");
     const updateFound = appVersion !== latestVersion && ((version === latestVersion && show) || version !== latestVersion)
