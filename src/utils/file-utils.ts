@@ -163,7 +163,7 @@ export const hasUpdate = async ({version, show}: {version: string, show: boolean
 
     if (!res.ok) throw new Error(await res.json())
 
-    const latestVersion = ((await res.json()).tag_name as string).replace("v", "");
+    const latestVersion = ((await res.json()).tag_name as string).replace(/^v/, "");
     const updateFound = appVersion !== latestVersion && ((version === latestVersion && show) || version !== latestVersion)
 
     updateSettings(latestVersion, updateFound)
