@@ -101,6 +101,7 @@ const useReceiver = () => {
           sender_id: appSession,
           is_cancelled: true,
           last_modified,
+          is_transferring: false
         },
         socket,
       );

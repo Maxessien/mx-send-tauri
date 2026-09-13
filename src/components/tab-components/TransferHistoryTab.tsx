@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { MergedHistory } from "../../types";
-import { sortTransferred } from "../../utils/file-utils";
-import { TransferTabItem } from "./TransferTab";
+import {
+  FILE_PREVIEW_IMAGES,
+  formatFileSize,
+  sortTransferred,
+} from "../../utils/file-utils";
 
 const TransferHistoryTab = () => {
   const { transferred } = useSelector((state: RootState) => state.allFiles);
@@ -31,7 +34,6 @@ const TransferHistoryTab = () => {
     })();
   }, [transferred]);
 
-
   return (
     <section className="w-full space-y-3">
       <h2 className="w-full text-left font-semibold text-2xl">History</h2>
@@ -52,10 +54,10 @@ const TransferHistoryTab = () => {
 
       <div className="space-y-2.6">
         {sorted.merged.map(({ date, files }) => {
-          return (
-            files.filter(({ isReceived }) =>
-                    historyActiveTab === "received" ? isReceived : !isReceived,
-                  ).length > 0 ? <div key={date} className="space-y-2">
+          return files.filter(({ isReceived }) =>
+            historyActiveTab === "received" ? isReceived : !isReceived,
+          ).length > 0 ? (
+            <div key={date} className="space-y-2">
               <h3 className="w-full text-center font-medium text-xl">{date}</h3>
               <div className="space-y-1.5">
                 {files
@@ -63,10 +65,31 @@ const TransferHistoryTab = () => {
                     historyActiveTab === "received" ? isReceived : !isReceived,
                   )
                   .map((f) => {
-                    return <TransferTabItem file={f} />;
+                    const { file_name, file_size, type } = f;
+                    return (
+                      <div className="flex relative w-full gap-2 sm:gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
+                        <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
+                          <img
+                            className="object-cover object-center w-full h-full"
+                            src={FILE_PREVIEW_IMAGES?.[type]}
+                            alt="Image"
+                          />
+                        </div>
+                        <div className="space-y-2 max-w-[calc(100%-58px)] sm:max-w-[calc(100%-85px)]  flex-1">
+                          <p className="sm:text-base text-sm line-clamp-2 wrap-break-word font-medium text-left">
+                            {file_name}
+                          </p>
+                          <p className="text-sm line-clamp-2 wrap-break-word font-medium text-left">
+                            {formatFileSize(file_size)}
+                          </p>
+                        </div>
+                      </div>
+                    );
                   })}
               </div>
-            </div> : <></>
+            </div>
+          ) : (
+            <></>
           );
         })}
       </div>
