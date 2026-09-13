@@ -8,7 +8,7 @@ import AudioTab from "./components/tab-components/AudioTab";
 import DocumentTab from "./components/tab-components/DocumentTab";
 import ImageTab from "./components/tab-components/ImageTab";
 import InternalStorageTab from "./components/tab-components/InternalStorageTab";
-import MediaFolders from './components/tab-components/MediaFolders';
+import MediaFolders from "./components/tab-components/MediaFolders";
 import SettingsTab from "./components/tab-components/SettingsTab";
 import TransferHistoryTab from "./components/tab-components/TransferHistoryTab";
 import TransferTab from "./components/tab-components/TransferTab";
@@ -17,7 +17,12 @@ import { RootState } from "./store";
 import { addTransferred } from "./store-slices/allFilesSlice";
 import { setSettings } from "./store-slices/settingsSlice";
 import { setWindow } from "./store-slices/windowSizeSlice";
-import { defaultSettings, determineFilesEqual } from "./utils/file-utils";
+import {
+  checkFieldsInObj,
+  defaultSettings,
+  determineFilesEqual,
+} from "./utils/file-utils";
+import { AppSettings } from "./types";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -34,25 +39,62 @@ const App = () => {
     (async () => {
       try {
         if (socket) socket.close();
-        const sett = await invoke<string>("get_settings", { defaultSettings: JSON.stringify(defaultSettings) });
+        const sett = await invoke<string>("get_settings", {
+          defaultSettings: JSON.stringify(defaultSettings),
+        });
         const trans = await invoke<string>("get_transferred");
-        
-        dispatch(setSettings(JSON.parse(sett)));
-        dispatch(addTransferred({ files: trans ? JSON.parse(trans) : [], mode: "replace" }));
-        
+
+        let parsedSett = (()=>{
+          try {
+            return JSON.parse(sett)
+          } catch (error) {
+            console.log(error)
+            return null
+          }
+        })();
+        let parsedTran = (()=>{
+          try {
+            return JSON.parse(trans)
+          } catch (error) {
+            console.log(error)
+            return null
+          }
+        })();
+
+        dispatch(
+          setSettings(
+            checkFieldsInObj<AppSettings>(parsedSett, [
+              "cacheTraversalResult",
+              "extraTraversalPaths",
+              "firstTimeUse",
+              "keepScreenAwake",
+              "organizeFilesByType",
+              "saveTransferHistory",
+              "theme",
+            ]) ? parsedSett : defaultSettings
+          ),
+        );
+
+        dispatch(
+          addTransferred({
+            files: parsedTran ? parsedTran : [],
+            mode: "replace",
+          }),
+        );
+
         settingsInit.current = true;
       } catch (err) {
         console.log(err);
       }
     })();
 
-    (async()=>{
+    (async () => {
       try {
         await invoke("disconnect_server");
       } catch (err) {
-        console.log(err)
+        console.log(err);
       }
-    })()
+    })();
 
     const handleResize = () => {
       dispatch(
@@ -77,7 +119,7 @@ const App = () => {
       }
     }, 3000);
 
-    return ()=> clearTimeout(timeout)
+    return () => clearTimeout(timeout);
   }, [settings]);
 
   useEffect(() => {
@@ -88,29 +130,39 @@ const App = () => {
       } catch (err) {
         console.log(err);
       }
-    })();  
+    })();
   }, [transferred]);
-  
+
   useEffect(() => {
     (() => {
-      const completed = transferring.filter(
-        ({ current, total }) => current >= total,
-      ).filter((file) => !transferred.some((f) => determineFilesEqual(f, file)));
-      if (completed.length > 0) dispatch(
-        addTransferred({
-          files: completed.map(
-            ({ file_name, file_path, file_size, type, file_type, sender_id }) => ({
-              file_name,
-              file_path,
-              file_size,
-              type: type || file_type,
-              date: new Date().toISOString(),
-              isReceived: sessId !== sender_id,
-            }),
-          ),
-          mode: "append",
-        }),
-      );
+      const completed = transferring
+        .filter(({ current, total }) => current >= total)
+        .filter(
+          (file) => !transferred.some((f) => determineFilesEqual(f, file)),
+        );
+      if (completed.length > 0)
+        dispatch(
+          addTransferred({
+            files: completed.map(
+              ({
+                file_name,
+                file_path,
+                file_size,
+                type,
+                file_type,
+                sender_id,
+              }) => ({
+                file_name,
+                file_path,
+                file_size,
+                type: type || file_type,
+                date: new Date().toISOString(),
+                isReceived: sessId !== sender_id,
+              }),
+            ),
+            mode: "append",
+          }),
+        );
     })();
   }, [transferring]);
 

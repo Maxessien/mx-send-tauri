@@ -133,4 +133,14 @@ export const defaultSettings: AppSettings = {
   saveTransferHistory: true,
   theme: "dark",
   extraTraversalPaths: [],
+  firstTimeUse: true,
+};
+
+export const checkFieldsInObj = <T>(obj: T, fields: (keyof T)[]) => {
+  for (const field of fields) {
+    if (obj[field] !== null && obj[field] !== undefined && !obj[field])
+      return false;
+  }
+
+  return true;
 };

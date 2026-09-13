@@ -72,3 +72,8 @@
 ## Future Considerations
 
 *These ideas are still exploratory and may be revisited later.*
+
+---
+
+### Completed
+* **Landing Page**

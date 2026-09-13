@@ -8,7 +8,8 @@ export interface AppSettings {
     organizeFilesByType: boolean,
     saveTransferHistory: boolean,
     keepScreenAwake: boolean,
-    extraTraversalPaths: string[]
+    extraTraversalPaths: string[],
+    firstTimeUse: boolean
 }
 
 export interface FileTransferred extends Omit<FileRes, "last_modified"> {
