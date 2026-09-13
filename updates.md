@@ -7,6 +7,20 @@
 
 ## User Experience
 
+### First-Time Onboarding
+* **Goal:** Help new users understand the file transfer workflow without needing external documentation.
+* **Planned Features:**
+  * Multi-step welcome guide shown on first launch.
+  * Explain the difference between Sender and Receiver modes.
+  * Walk users through:
+    1. Selecting files.
+    2. Connecting devices.
+    3. Starting a transfer.
+    4. Receiving files.
+  * Allow users to skip the guide.
+  * Add a "View Guide Again" option in Settings.
+* **Motivation:** Reduce friction for first-time users and
+
 ### Landing Page
 * **Goal:** Create a dedicated website for MxSend.
 * **Planned Sections:**
