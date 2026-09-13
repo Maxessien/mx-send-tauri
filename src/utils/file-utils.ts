@@ -8,6 +8,7 @@ import {
   MergedHistory,
   Transfer,
 } from "../types";
+import { getVersion } from "@tauri-apps/api/app";
 
 export const FILE_PREVIEW_IMAGES: Record<FileResType, string> = {
   audio: "/audio-icon.png",
@@ -134,6 +135,7 @@ export const defaultSettings: AppSettings = {
   theme: "dark",
   extraTraversalPaths: [],
   firstTimeUse: true,
+  showUpdatePopup: { version: "0.0.1", show: false, timeChecked: Date.now() },
 };
 
 export const checkFieldsInObj = <T extends object>(
@@ -144,9 +146,32 @@ export const checkFieldsInObj = <T extends object>(
 
   for (const field of fields) {
     const value = obj[field];
-    if (value === null || value === undefined)
-      return false;
+    if (value === null || value === undefined) return false;
   }
 
   return true;
+};
+
+export const hasUpdate = async ({version, show}: {version: string, show: boolean}, updateSettings: (latest: string, show: boolean)=> void) => {
+  try {
+    const appVersion = await getVersion();
+    
+    const GITHUB_RELEASE_API =
+    "https://api.github.com/repos/Maxessien/mx-send-tauri/releases/latest";
+    
+    const res = await (
+      await fetch(GITHUB_RELEASE_API, { method: "GET", signal: AbortSignal.timeout(10000) })
+    ).json();
+
+    const latestVersion = (res.tag_name as string).slice(1);
+    const updateFound = appVersion !== latestVersion && ((version === latestVersion && show) || version !== latestVersion)
+
+    updateSettings(latestVersion, updateFound)
+
+    return updateFound;
+  } catch (error) {
+    console.log(error);
+
+    return false;
+  }
 };

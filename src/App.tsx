@@ -22,8 +22,10 @@ import {
   checkFieldsInObj,
   defaultSettings,
   determineFilesEqual,
+  hasUpdate,
 } from "./utils/file-utils";
 import { AppSettings } from "./types";
+import NewUpdatePopup from "./components/reusable-components/NewUpdatePopup";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -36,6 +38,7 @@ const App = () => {
 
   const settingsInit = useRef(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [showUpdatePopup, setShowUpdatePopup] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -46,26 +49,48 @@ const App = () => {
         });
         const trans = await invoke<string>("get_transferred");
 
-        let parsedSett = (()=>{
+        let parsedSett: AppSettings = (() => {
           try {
-            return JSON.parse(sett)
+            return JSON.parse(sett);
           } catch (error) {
-            console.log(error)
-            return null
-          }
-        })();
-        let parsedTran = (()=>{
-          try {
-            return JSON.parse(trans)
-          } catch (error) {
-            console.log(error)
-            return null
+            console.log(error);
+            return null;
           }
         })();
 
+        let parsedTran = (() => {
+          try {
+            return JSON.parse(trans);
+          } catch (error) {
+            console.log(error);
+            return null;
+          }
+        })();
+
+        setShowUpdatePopup(
+          checkFieldsInObj(parsedSett, ["showUpdatePopup"]) &&
+            Date.now() - parsedSett.showUpdatePopup.timeChecked > 60 * 60 * 24 * 1000
+            ? await hasUpdate(
+                checkFieldsInObj(parsedSett, ["showUpdatePopup"])
+                  ? parsedSett.showUpdatePopup
+                  : defaultSettings.showUpdatePopup,
+                (latest, show) => {
+                  setSettings({
+                    ...settings,
+                    showUpdatePopup: {
+                      version: latest,
+                      show,
+                      timeChecked: Date.now(),
+                    },
+                  });
+                },
+              )
+            : false,
+        );
+
         dispatch(
           setSettings(
-            checkFieldsInObj<AppSettings>(parsedSett, [
+            checkFieldsInObj(parsedSett, [
               "cacheTraversalResult",
               "extraTraversalPaths",
               "firstTimeUse",
@@ -73,7 +98,10 @@ const App = () => {
               "organizeFilesByType",
               "saveTransferHistory",
               "theme",
-            ]) ? parsedSett : defaultSettings
+              "showUpdatePopup",
+            ])
+              ? parsedSett
+              : defaultSettings,
           ),
         );
 
@@ -195,21 +223,38 @@ const App = () => {
           <Route path="*" element={<Navigate replace to="/onboarding" />} />
         </Routes>
       ) : (
-        <AppWrapper>
-          <Routes>
-            <Route path="/" element={<Navigate replace to="/audio" />} />
-            <Route path="/audio" element={<AudioTab />} />
-            <Route path="/document" element={<DocumentTab />} />
-            <Route path="/video" element={<VideoTab />} />
-            <Route path="/image" element={<ImageTab />} />
-            <Route path="/transfers" element={<TransferTab />} />
-            <Route path="/settings" element={<SettingsTab />} />
-            <Route path="/history" element={<TransferHistoryTab />} />
-            <Route path="/media" element={<MediaFolders />} />
-            <Route path="/storage" element={<InternalStorageTab />} />
-            <Route path="/onboarding" element={<Navigate replace to="/audio" />} />
-          </Routes>
-        </AppWrapper>
+        <>
+          {showUpdatePopup && (
+            <NewUpdatePopup
+              hidePopup={() => setShowUpdatePopup(false)}
+              toggleShow={(val) =>
+                setSettings({
+                  ...settings,
+                  showUpdatePopup: { ...settings.showUpdatePopup, show: val },
+                })
+              }
+              toggActive={settingsInit.current}
+            />
+          )}
+          <AppWrapper>
+            <Routes>
+              <Route path="/" element={<Navigate replace to="/audio" />} />
+              <Route path="/audio" element={<AudioTab />} />
+              <Route path="/document" element={<DocumentTab />} />
+              <Route path="/video" element={<VideoTab />} />
+              <Route path="/image" element={<ImageTab />} />
+              <Route path="/transfers" element={<TransferTab />} />
+              <Route path="/settings" element={<SettingsTab />} />
+              <Route path="/history" element={<TransferHistoryTab />} />
+              <Route path="/media" element={<MediaFolders />} />
+              <Route path="/storage" element={<InternalStorageTab />} />
+              <Route
+                path="/onboarding"
+                element={<Navigate replace to="/audio" />}
+              />
+            </Routes>
+          </AppWrapper>
+        </>
       )}
       <ToastContainer
         closeOnClick

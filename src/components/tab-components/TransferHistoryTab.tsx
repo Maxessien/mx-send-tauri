@@ -10,7 +10,6 @@ const TransferHistoryTab = () => {
   const [historyActiveTab, setHistoryActiveTab] = useState<"sent" | "received">(
     "received",
   );
-  console.log(transferred)
   const [sorted, setSorted] = useState<{
     raw: { [key: string]: MergedHistory };
     merged: MergedHistory[];

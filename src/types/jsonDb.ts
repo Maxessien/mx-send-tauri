@@ -9,7 +9,8 @@ export interface AppSettings {
     saveTransferHistory: boolean,
     keepScreenAwake: boolean,
     extraTraversalPaths: string[],
-    firstTimeUse: boolean
+    firstTimeUse: boolean,
+    showUpdatePopup: {version: string, show: boolean, timeChecked: number}
 }
 
 export interface FileTransferred extends Omit<FileRes, "last_modified"> {
