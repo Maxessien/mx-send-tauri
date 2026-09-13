@@ -4,5 +4,6 @@
   "cacheTraversalResult": true,
   "saveTransferHistory": true,
   "keepScreenAwake": true,
-  "extraTraversalPaths": []
+  "extraTraversalPaths": [],
+  "firstTimeUse": true
 }

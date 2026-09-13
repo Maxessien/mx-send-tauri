@@ -136,9 +136,15 @@ export const defaultSettings: AppSettings = {
   firstTimeUse: true,
 };
 
-export const checkFieldsInObj = <T>(obj: T, fields: (keyof T)[]) => {
+export const checkFieldsInObj = <T extends object>(
+  obj: T | null,
+  fields: (keyof T)[],
+) => {
+  if (!obj) return false;
+
   for (const field of fields) {
-    if (obj[field] !== null && obj[field] !== undefined && !obj[field])
+    const value = obj[field];
+    if (value === null || value === undefined)
       return false;
   }
 
