@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FaArrowRight, FaFolder, FaTrash } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from 'react-router';
+import { useNavigate } from "react-router";
 import { RootState } from "../../store";
 import { addTransferred } from "../../store-slices/allFilesSlice";
 import { setSettings } from "../../store-slices/settingsSlice";
@@ -114,6 +114,28 @@ const SettingsTab = () => {
           <div className="w-full flex flex-col gap-2 justify-center items-start">
             <span className="leading-4">Media Library folders</span>
             <span className="text-base text-(--text-secondary) leading-4">View and edit folders to include during scan</span>
+          </div>
+        </div>
+        <span>
+          <FaArrowRight />
+        </span>
+      </Card>
+
+      <Card
+        attrs={{
+          onClick: () => {
+            dispatch(setSettings({ ...settings, firstTimeUse: true }));
+            navigate("/onboarding");
+          },
+        }}
+        extraClassNames="flex cursor-pointer justify-between font-medium text-lg items-center gap-2"
+      >
+        <div className="flex justify-start items-center flex-1 gap-3">
+          <div className="w-full flex flex-col gap-2 justify-center items-start">
+            <span className="leading-4">View Guide Again</span>
+            <span className="text-base text-(--text-secondary) leading-4">
+              Reopen the first-time onboarding walkthrough
+            </span>
           </div>
         </div>
         <span>

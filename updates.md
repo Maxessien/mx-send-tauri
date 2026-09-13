@@ -76,4 +76,5 @@
 ---
 
 ### Completed
+* **First-Time Onboarding**
 * **Landing Page**

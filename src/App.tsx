@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
+import Onboarding from "./components/onboarding/Onboarding";
 import AppWrapper from "./components/page-layouts/AppWrapper";
 import AudioTab from "./components/tab-components/AudioTab";
 import DocumentTab from "./components/tab-components/DocumentTab";
@@ -34,6 +35,7 @@ const App = () => {
   );
 
   const settingsInit = useRef(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -81,10 +83,13 @@ const App = () => {
             mode: "replace",
           }),
         );
-
-        settingsInit.current = true;
       } catch (err) {
         console.log(err);
+        dispatch(setSettings(defaultSettings));
+        dispatch(addTransferred({ files: [], mode: "replace" }));
+      } finally {
+        settingsInit.current = true;
+        setSettingsLoaded(true);
       }
     })();
 
@@ -180,20 +185,32 @@ const App = () => {
 
   return (
     <BrowserRouter>
-      <AppWrapper>
+      {!settingsLoaded ? (
+        <section className="w-screen h-screen flex justify-center items-center text-lg font-medium">
+          Loading app...
+        </section>
+      ) : settings.firstTimeUse ? (
         <Routes>
-          <Route path="/" element={<AudioTab />} />
-          <Route path="/audio" element={<AudioTab />} />
-          <Route path="/document" element={<DocumentTab />} />
-          <Route path="/video" element={<VideoTab />} />
-          <Route path="/image" element={<ImageTab />} />
-          <Route path="/transfers" element={<TransferTab />} />
-          <Route path="/settings" element={<SettingsTab />} />
-          <Route path="/history" element={<TransferHistoryTab />} />
-          <Route path="/media" element={<MediaFolders />} />
-          <Route path="/storage" element={<InternalStorageTab />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="*" element={<Navigate replace to="/onboarding" />} />
         </Routes>
-      </AppWrapper>
+      ) : (
+        <AppWrapper>
+          <Routes>
+            <Route path="/" element={<Navigate replace to="/audio" />} />
+            <Route path="/audio" element={<AudioTab />} />
+            <Route path="/document" element={<DocumentTab />} />
+            <Route path="/video" element={<VideoTab />} />
+            <Route path="/image" element={<ImageTab />} />
+            <Route path="/transfers" element={<TransferTab />} />
+            <Route path="/settings" element={<SettingsTab />} />
+            <Route path="/history" element={<TransferHistoryTab />} />
+            <Route path="/media" element={<MediaFolders />} />
+            <Route path="/storage" element={<InternalStorageTab />} />
+            <Route path="/onboarding" element={<Navigate replace to="/audio" />} />
+          </Routes>
+        </AppWrapper>
+      )}
       <ToastContainer
         closeOnClick
         draggable
