@@ -69,20 +69,23 @@ const App = () => {
 
         setShowUpdatePopup(
           checkFieldsInObj(parsedSett, ["showUpdatePopup"]) &&
-            Date.now() - parsedSett.showUpdatePopup.timeChecked > 60 * 60 * 24 * 1000
+            Date.now() - parsedSett.showUpdatePopup.timeChecked >
+              60 * 60 * 24 * 1000
             ? await hasUpdate(
                 checkFieldsInObj(parsedSett, ["showUpdatePopup"])
                   ? parsedSett.showUpdatePopup
                   : defaultSettings.showUpdatePopup,
                 (latest, show) => {
-                  dispatch(setSettings({
-                    ...parsedSett,
-                    showUpdatePopup: {
-                      version: latest,
-                      show,
-                      timeChecked: Date.now(),
-                    },
-                  }));
+                  dispatch(
+                    setSettings({
+                      ...parsedSett,
+                      showUpdatePopup: {
+                        version: latest,
+                        show,
+                        timeChecked: Date.now(),
+                      },
+                    }),
+                  );
                 },
               )
             : false,
@@ -228,10 +231,12 @@ const App = () => {
             <NewUpdatePopup
               hidePopup={() => setShowUpdatePopup(false)}
               toggleShow={(val) =>
-                setSettings({
-                  ...settings,
-                  showUpdatePopup: { ...settings.showUpdatePopup, show: val },
-                })
+                dispatch(
+                  setSettings({
+                    ...settings,
+                    showUpdatePopup: { ...settings.showUpdatePopup, show: val },
+                  }),
+                )
               }
               toggActive={settingsInit.current}
             />
