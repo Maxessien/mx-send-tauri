@@ -75,14 +75,14 @@ const App = () => {
                   ? parsedSett.showUpdatePopup
                   : defaultSettings.showUpdatePopup,
                 (latest, show) => {
-                  setSettings({
-                    ...settings,
+                  dispatch(setSettings({
+                    ...parsedSett,
                     showUpdatePopup: {
                       version: latest,
                       show,
                       timeChecked: Date.now(),
                     },
-                  });
+                  }));
                 },
               )
             : false,

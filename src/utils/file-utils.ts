@@ -159,11 +159,11 @@ export const hasUpdate = async ({version, show}: {version: string, show: boolean
     const GITHUB_RELEASE_API =
     "https://api.github.com/repos/Maxessien/mx-send-tauri/releases/latest";
     
-    const res = await (
-      await fetch(GITHUB_RELEASE_API, { method: "GET", signal: AbortSignal.timeout(10000) })
-    ).json();
+    const res = await fetch(GITHUB_RELEASE_API, { method: "GET", signal: AbortSignal.timeout(10000) });
 
-    const latestVersion = (res.tag_name as string).slice(1);
+    if (!res.ok) throw new Error(await res.json())
+
+    const latestVersion = ((await res.json()).tag_name as string).replace("v", "");
     const updateFound = appVersion !== latestVersion && ((version === latestVersion && show) || version !== latestVersion)
 
     updateSettings(latestVersion, updateFound)
