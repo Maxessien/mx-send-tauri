@@ -19,7 +19,7 @@
     4. Receiving files.
   * Allow users to skip the guide.
   * Add a "View Guide Again" option in Settings.
-* **Motivation:** Reduce friction for first-time users and
+* **Motivation:** Reduce friction for first-time users and lower the learning curve.
 
 ### Landing Page
 * **Goal:** Create a dedicated website for MxSend.
