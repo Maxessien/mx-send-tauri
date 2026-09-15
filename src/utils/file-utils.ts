@@ -109,7 +109,7 @@ export const emitCancelEvent = (f: Transfer, socket: Socket | null) => {
     file_path,
     file_size,
     type,
-    sender_id,
+    sender_id, file_type,
     last_modified,
   } = f;
   socket?.emit("progress", {
@@ -117,7 +117,7 @@ export const emitCancelEvent = (f: Transfer, socket: Socket | null) => {
     file_name,
     file_path,
     file_size,
-    file_type: type,
+    file_type: file_type ?? type ?? "document",
     total: file_size,
     sender_id,
     is_cancelled: true,

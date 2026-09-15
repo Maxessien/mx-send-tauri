@@ -105,11 +105,9 @@ const useSendFiles = () => {
             `Fetch failed: status-${res.status}, error-${res.statusText}`,
           );
       }
-
-      await handleNext();
     } catch (err) {
       console.log(err);
-
+    }finally{
       await handleNext();
     }
   };

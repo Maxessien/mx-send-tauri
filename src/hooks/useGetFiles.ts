@@ -118,13 +118,13 @@ const useReceiver = () => {
         sessionId: connectionInfo.session_id,
         senderId,
       });
-
+    } catch (err) {
+      console.log(err);
+    }finally{
       if (downloadQueue.traverse().length > 0) {
         const { fileId, senderId } = downloadQueue.pop();
         downloadVideo(fileId, senderId);
       } else downloadQueue.isProcessing = false;
-    } catch (err) {
-      console.log(err);
     }
   };
 
@@ -205,3 +205,4 @@ const useGetDirList = (
 };
 
 export { useGetDirList, useGetFiles, useReceiver };
+

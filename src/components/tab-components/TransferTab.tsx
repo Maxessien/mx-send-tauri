@@ -1,7 +1,12 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { FaArrowLeft } from "react-icons/fa";
+import { HiX } from "react-icons/hi";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router";
+import { useReceiver } from "../../hooks/useGetFiles";
+import useSendFiles from "../../hooks/useSendFiles";
+import { socket } from "../../hooks/useWebsocket";
 import { RootState } from "../../store";
 import { Transfer } from "../../types";
 import {
@@ -10,12 +15,7 @@ import {
   FILE_PREVIEW_IMAGES,
   formatFileSize,
 } from "../../utils/file-utils";
-import { invoke } from "@tauri-apps/api/core";
 import Button from "../reusable-components/Button";
-import { HiX } from "react-icons/hi";
-import { useReceiver } from "../../hooks/useGetFiles";
-import useSendFiles from "../../hooks/useSendFiles";
-import { socket } from "../../hooks/useWebsocket";
 
 export const TransferTabItem = ({
   file,
@@ -24,7 +24,15 @@ export const TransferTabItem = ({
   file: Omit<Transfer, "sender_id" | "last_modified">;
   cancelTrans: () => void;
 }) => {
-  const { file_name, file_size, type, file_type, is_cancelled, current, total } = file;
+  const {
+    file_name,
+    file_size,
+    type,
+    file_type,
+    is_cancelled,
+    current,
+    total,
+  } = file;
   return (
     <div className="flex w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
       <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
@@ -46,15 +54,17 @@ export const TransferTabItem = ({
           {formatFileSize(file_size)}
         </p>
       </div>
-      {(!is_cancelled && current < total) && <div>
-        <Button
-          usePredefinedSize={false}
-          attrs={{ onClick: cancelTrans }}
-          className="p-3 rounded-md"
-        >
-          <HiX />
-        </Button>
-      </div>}
+      {!is_cancelled && current < total && (
+        <div>
+          <Button
+            usePredefinedSize={false}
+            attrs={{ onClick: cancelTrans }}
+            className="p-3 rounded-md"
+          >
+            <HiX />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
@@ -99,6 +109,19 @@ const TransferTab = () => {
     }
   };
 
+  // useEffect(() => {
+  //   (async () => {
+  //     const stallItm = transferring.find(
+  //       ({ is_cancelled, is_transferring }) => is_cancelled && is_transferring,
+  //     );
+
+  //     if (stallItm && stallItm.sender_id === appSessionId) {
+  //       await invoke("cancel_upload");
+  //       emitCancelEvent(stallItm, socket);
+  //     }
+  //   })();
+  // }, [transferring]);
+
   return (
     <section className="w-full space-y-3">
       <p className="w-full flex justify-start items-center gap-2">
@@ -131,8 +154,8 @@ const TransferTab = () => {
         0 ? (
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
-              .map((file) => {
-                console.log(file)
+            .map((file) => {
+              console.log(file);
               const { file_name, file_path, current, total, is_cancelled } =
                 file;
               return (
@@ -140,10 +163,13 @@ const TransferTab = () => {
                   key={file_name + file_path}
                   className="relative w-full rounded-md"
                 >
-                  <TransferTabItem file={file} cancelTrans={() => callCancel(file)} />
+                  <TransferTabItem
+                    file={file}
+                    cancelTrans={() => callCancel(file)}
+                  />
                   {is_cancelled && (
-                    <div className="w-full h-full flex justify-center items-center backdrop-blur-lg">
-                      <p className="text-red-700 font-medium text-2xl">
+                    <div className="w-full h-full flex justify-center absolute top-0 left-0 z-9 items-center backdrop-blur-xs">
+                      <p className="text-red-600 text-shadow-md font-medium text-2xl">
                         Cancelled
                       </p>
                     </div>
@@ -152,7 +178,7 @@ const TransferTab = () => {
                     style={{
                       width: `${current >= total ? "100" : (current / total) * 100}%`,
                     }}
-                    className="absolute bg-[rgb(30,58,138,0.3)] h-full top-0 left-0"
+                    className="absolute bg-[rgb(30,58,138,0.3)] h-full z-5 top-0 left-0"
                   ></div>
                 </div>
               );
