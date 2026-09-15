@@ -7,6 +7,7 @@ import { addManyFiles } from "../store-slices/allFilesSlice";
 import { DirList, FileRes, FileResType } from "../types";
 import { emitCancelEvent, getRustFileType } from "../utils/file-utils";
 import { downloadQueue } from "../utils/queue";
+import { socket } from "./useWebsocket";
 
 const useGetFiles = (
   fileType: FileResType,
@@ -57,7 +58,7 @@ const useGetFiles = (
 };
 
 const useReceiver = () => {
-  const { role, isConnected, connectionInfo, socket } = useSelector(
+  const { role, isConnected, connectionInfo } = useSelector(
     (state: RootState) => state.connection,
   );
 

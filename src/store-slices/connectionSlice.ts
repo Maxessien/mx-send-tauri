@@ -7,7 +7,6 @@ const initialState: ConnectionState = {
   role: "receiver",
   count: 0,
   connectionInfo: { ip_address: "", port: "", session_id: "" },
-  socket: null
 };
 
 const connectionSlice = createSlice({

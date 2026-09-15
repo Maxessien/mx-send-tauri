@@ -1,35 +1,38 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { RootState } from "../store";
 import { updateTransferProgress } from "../store-slices/allFilesSlice";
 import { setConnection } from "../store-slices/connectionSlice";
 import { Transfer } from "../types";
 
 
+export let socket: Socket | null = null
+
 const useWebsocket = () => {
-  const { connectionInfo, isConnected, role, count, socket } = useSelector(
+  const { connectionInfo, isConnected, role, count } = useSelector(
     (state: RootState) => state.connection,
   );
   const dispatch = useDispatch();
   useEffect(() => {
     if (socket) {
       socket.close();
-      dispatch(setConnection({connectionInfo, count, isConnected, role, socket: null}))
+      dispatch(setConnection({ connectionInfo, count, isConnected, role }))
+      socket = null
     }
     if (isConnected || role === "sender") {
       const url = `http://${connectionInfo.ip_address}:${connectionInfo.port}`;
-      const socketIo = io(url, {
+      socket = io(url, {
         path: "/ws",
         query: { session: connectionInfo.session_id },
       });
-	
-      dispatch(setConnection({connectionInfo, count, isConnected, role, socket: socketIo}))
 
-      socketIo.on("connect", () => {
+      dispatch(setConnection({connectionInfo, count, isConnected, role}))
+
+      socket.on("connect", () => {
         console.log("Socket connected")
       });
-      socketIo.on("disconnect", (reason, desc) =>{
+      socket.on("disconnect", (reason, desc) =>{
         console.log("Socket disconnected", { reason, desc })
         dispatch(
           setConnection({
@@ -37,11 +40,11 @@ const useWebsocket = () => {
             isConnected: false,
             role: "receiver",
             connectionInfo: { ip_address: "", port: "", session_id: "" },
-            socket: null,
           }),
         );
+        socket = null
       });
-      socketIo.on("newConnection", () => {
+      socket.on("newConnection", () => {
         console.log("new connection")
         dispatch(
           setConnection({
@@ -49,11 +52,10 @@ const useWebsocket = () => {
             count: count + 1,
             isConnected: true,
             role,
-            socket: socketIo
           }),
         );
       });
-      socketIo.on("progress", (data: Transfer) => {
+      socket.on("progress", (data: Transfer) => {
         dispatch(updateTransferProgress(data));
       });
     }

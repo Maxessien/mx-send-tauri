@@ -26,10 +26,10 @@ import {
 } from "./utils/file-utils";
 import { AppSettings } from "./types";
 import NewUpdatePopup from "./components/reusable-components/NewUpdatePopup";
+import { socket } from "./hooks/useWebsocket";
 
 const App = () => {
   const dispatch = useDispatch();
-  const { socket } = useSelector((state: RootState) => state.connection);
   const settings = useSelector((state: RootState) => state.settings);
   const sessId = useSelector((state: RootState) => state.appSession);
   const { transferred, transferring } = useSelector(

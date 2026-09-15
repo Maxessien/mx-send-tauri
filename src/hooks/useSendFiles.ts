@@ -4,9 +4,10 @@ import { RootState } from "../store";
 import { FileRes, FileResType } from "../types";
 import { capitalise, emitCancelEvent } from "../utils/file-utils";
 import { uploadQueue } from "../utils/queue";
+import { socket } from "./useWebsocket";
 
 const useSendFiles = () => {
-  const { isConnected, role, connectionInfo, socket } = useSelector(
+  const { isConnected, role, connectionInfo } = useSelector(
     (state: RootState) => state.connection,
   );
 

@@ -12,6 +12,7 @@ import { setConnection } from "../../store-slices/connectionSlice";
 import { ConnectionInfo, Transfer } from "../../types";
 import Button from "../reusable-components/Button";
 import { ScannerState } from "./AppWrapper";
+import { socket } from "../../hooks/useWebsocket";
 
 const ActionBtns = ({
   showQrCode,
@@ -28,7 +29,7 @@ const ActionBtns = ({
   serverStarted: boolean;
   setServerStarted: () => void;
 }) => {
-  const { isConnected, socket } = useSelector(
+  const { isConnected } = useSelector(
     (state: RootState) => state.connection,
   );
   const selected = useSelector((state: RootState) => state.allFiles.selected);
@@ -80,7 +81,6 @@ const ActionBtns = ({
           count: 1,
           isConnected: false,
           role: "sender",
-          socket,
         }),
       );
       setServerStarted();

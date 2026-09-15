@@ -15,6 +15,7 @@ import Button from "../reusable-components/Button";
 import { HiX } from "react-icons/hi";
 import { useReceiver } from "../../hooks/useGetFiles";
 import useSendFiles from "../../hooks/useSendFiles";
+import { socket } from "../../hooks/useWebsocket";
 
 export const TransferTabItem = ({
   file,
@@ -63,7 +64,6 @@ const TransferTab = () => {
     (state: RootState) => state.allFiles.transferring,
   );
   const appSessionId = useSelector((state: RootState) => state.appSession);
-  const { socket } = useSelector((state: RootState) => state.connection);
   const [activeTransferTab, setActiveTransferTab] = useState<
     "sending" | "receiving"
   >("receiving");
