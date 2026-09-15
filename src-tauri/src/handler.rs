@@ -57,6 +57,11 @@ pub struct UploadFileQuery {
 }
 
 #[derive(Deserialize)]
+pub struct AllowedFileQuery {
+    pub file_id: Uuid,
+}
+
+#[derive(Deserialize)]
 pub struct WsSessionQuery {
     pub session: String,
 }
@@ -212,7 +217,7 @@ pub async fn add_to_filelist(
 
 pub async fn get_allowed_list_info(
     State(app): State<AppHandle>,
-    Query(file_id): Query<Uuid>,
+    Query(query): Query<AllowedFileQuery>,
 ) -> (StatusCode, impl IntoResponse) {
     let state = app.state::<Mutex<AllowedFileList>>();
     let allowed = state.lock().await;
@@ -220,7 +225,7 @@ pub async fn get_allowed_list_info(
     let requested = allowed
         .list
         .iter()
-        .find(|item| file_id == item.id)
+        .find(|item| query.file_id == item.id)
         .map(|item| FileResWithType {
             file_name: item.name.clone(),
             file_size: item.size,
