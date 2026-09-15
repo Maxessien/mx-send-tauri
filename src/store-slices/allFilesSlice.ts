@@ -52,7 +52,7 @@ const allFiles = createSlice({
           file_name !== payload.file_name || file_path !== payload.file_path,
       );
     },
-    
+
     updateTransferProgress: (state, { payload }: PayloadAction<Transfer>) => {
       const newTransfer = payload;
       const idx = state.transferring.findIndex((f) =>
@@ -60,7 +60,9 @@ const allFiles = createSlice({
       );
 
       if (idx >= 0) {
-        state.transferring[idx] = newTransfer;
+        state.transferring[idx] = state.transferring[idx].is_cancelled
+          ? { ...newTransfer, is_cancelled: true }
+          : newTransfer;
       } else {
         state.transferring = [...state.transferring, newTransfer];
       }
@@ -77,10 +79,11 @@ const allFiles = createSlice({
     ) => {
       const m = mode || "append";
       const cleaned = files.filter(
-        (file) => !state.transferred.some((f) => determineFilesEqual(f, file))
+        (file) => !state.transferred.some((f) => determineFilesEqual(f, file)),
       );
       state.transferred =
-        m === "replace" ? files : [...state.transferred, ...cleaned];    },
+        m === "replace" ? files : [...state.transferred, ...cleaned];
+    },
   },
 });
 

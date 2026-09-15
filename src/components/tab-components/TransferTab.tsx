@@ -131,7 +131,8 @@ const TransferTab = () => {
         0 ? (
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
-            .map((file) => {
+              .map((file) => {
+                console.log(file)
               const { file_name, file_path, current, total, is_cancelled } =
                 file;
               return (

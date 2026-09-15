@@ -91,7 +91,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
           file_size,
           file_type,
           total: file_size,
-          sender_id: appSessionId, is_cancelled: false, is_transferring: false
+          sender_id: data.sender_id, is_cancelled: false, is_transferring: false
         } as Transfer);
 
         pushDownload(data.file_id, data.sender_id, {...f, type: f.file_type});

@@ -14,7 +14,7 @@ use socketioxide::{
     SocketIoBuilder,
 };
 use tauri::{AppHandle, Manager};
-use tokio::{net::TcpListener};
+use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
 
@@ -50,7 +50,6 @@ async fn get_available_listener() -> (TcpListener, String) {
     (listener, String::from("3000"))
 }
 
-
 #[derive(Serialize, Deserialize)]
 struct Progress {
     current: u64,
@@ -60,6 +59,8 @@ struct Progress {
     file_type: String,
     file_path: String,
     sender_id: String,
+    is_cancelled: bool,
+    is_transferring: bool,
 }
 
 pub async fn create_server(app_handle: AppHandle) -> String {
@@ -67,7 +68,7 @@ pub async fn create_server(app_handle: AppHandle) -> String {
     tauri::async_runtime::spawn(async move {
         let handle = Handle::new();
         let app_clone = app_handle.clone();
-            let state = app_clone.state::<Mutex<Option<Handle<SocketAddr>>>>();
+        let state = app_clone.state::<Mutex<Option<Handle<SocketAddr>>>>();
         {
             let mut val = state.lock().await;
             let handle_clone = handle.clone();
@@ -96,7 +97,7 @@ pub async fn create_server(app_handle: AppHandle) -> String {
             );
             websocket::handle_socket(s).await
         });
-        
+
         let app = Router::new()
             .route("/upload", post(handler::add_to_filelist))
             .route("/download", get(handler::download_from_filelist))
