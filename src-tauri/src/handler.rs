@@ -212,7 +212,7 @@ pub async fn add_to_filelist(
 
 pub async fn get_allowed_list_info(
     State(app): State<AppHandle>,
-    Json(file_id): Json<Uuid>,
+    Query(file_id): Query<Uuid>,
 ) -> (StatusCode, impl IntoResponse) {
     let state = app.state::<Mutex<AllowedFileList>>();
     let allowed = state.lock().await;

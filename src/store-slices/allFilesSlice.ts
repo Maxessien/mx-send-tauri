@@ -52,18 +52,20 @@ const allFiles = createSlice({
           file_name !== payload.file_name || file_path !== payload.file_path,
       );
     },
+    
     updateTransferProgress: (state, { payload }: PayloadAction<Transfer>) => {
       const newTransfer = payload;
-      const existing = state.transferring.find((f) =>
+      let existing = state.transferring.find((f) =>
         determineTransfersEqual(f, newTransfer),
       );
 
       if (existing) {
-        existing.current = newTransfer.current;
+        existing = {...newTransfer};
       } else {
         state.transferring = [...state.transferring, newTransfer];
       }
     },
+
     addTransferred: (
       state,
       {

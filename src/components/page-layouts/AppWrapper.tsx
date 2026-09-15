@@ -72,8 +72,7 @@ const AppWrapper = ({ children }: { children: JSX.Element }) => {
     if (isConnected && role === "receiver" && socket) {
       socket.emit("newConnection", connectionInfo.session_id);
       socket.on("newFile", async(data: { file_id: string; sender_id: string }) => {
-        const res = await fetch(`http://${connectionInfo.ip_address}:${connectionInfo.port}/allowedinfo`, {
-          body: JSON.stringify(data.file_id),
+        const res = await fetch(`http://${connectionInfo.ip_address}:${connectionInfo.port}/allowedinfo?file_id=${data.file_id}`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${connectionInfo.session_id}`,
