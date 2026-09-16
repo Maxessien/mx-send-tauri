@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, time::SystemTime};
 use tauri::Manager;
 use tokio::{
@@ -16,12 +16,12 @@ pub struct CreateConnRes {
     pub port: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct FileRes {
     pub file_name: String,
     pub file_size: u64,
     pub file_path: PathBuf,
-    pub last_modified: SystemTime
+    pub last_modified: SystemTime,
 }
 
 #[derive(Serialize)]
@@ -30,7 +30,7 @@ pub struct FileResWithType {
     pub file_size: u64,
     pub file_path: PathBuf,
     pub file_type: String,
-    pub last_modified: SystemTime
+    pub last_modified: SystemTime,
 }
 
 #[derive(Serialize)]
@@ -46,11 +46,11 @@ pub struct DirList {
 }
 
 pub struct CancelOngoingUpload {
-    pub val: bool
+    pub val: bool,
 }
 
 pub struct CancelOngoingDownload {
-    pub val: bool
+    pub val: bool,
 }
 
 #[cfg(target_os = "android")]
@@ -96,7 +96,7 @@ pub struct ByteProgress {
 #[derive(Serialize, Clone)]
 pub struct DownloadProgressPayload {
     pub file_name: String,
-    pub file_path: String,
+    pub file_path: PathBuf,
     pub file_size: u64,
     pub file_type: String,
     pub total: u64,

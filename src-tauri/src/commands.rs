@@ -210,6 +210,7 @@ pub async fn download_file_from_sender(
     session_id: String,
     app_handle: tauri::AppHandle,
     sender_id: String,
+    file_info: FileRes,
 ) -> Result<String, String> {
     let mut headers = header::HeaderMap::new();
     let sess_id = format!("Bearer {}", session_id);
@@ -229,25 +230,6 @@ pub async fn download_file_from_sender(
         return Err(format!("Download failed with status: {}", res.status()));
     }
 
-    let file_name = res
-        .headers()
-        .get("file_name")
-        .and_then(|h| h.to_str().ok())
-        .unwrap_or("unknown")
-        .to_string();
-    let file_size: u64 = res
-        .headers()
-        .get("file_size")
-        .and_then(|h| h.to_str().ok())
-        .unwrap_or("0")
-        .parse()
-        .unwrap_or(0);
-    let file_path = res
-        .headers()
-        .get("file_path")
-        .and_then(|h| h.to_str().ok())
-        .unwrap_or("")
-        .to_string();
     let file_type_str = res
         .headers()
         .get("file_type")
@@ -261,6 +243,13 @@ pub async fn download_file_from_sender(
         "image" => handler::FileType::Image,
         _ => handler::FileType::Document,
     };
+
+    let FileRes {
+        file_name,
+        file_size,
+        file_path,
+        last_modified,
+    } = file_info;
 
     let mut download_dir = match file_types::get_save_dir(&app_handle).await {
         Ok(dir) => dir,

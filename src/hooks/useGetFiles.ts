@@ -68,7 +68,7 @@ const useReceiver = () => {
     downloadQueue.push({ fileId, senderId, file });
     if (!downloadQueue.isProcessing) {
       const { fileId, senderId } = downloadQueue.pop();
-      downloadVideo(fileId, senderId);
+      downloadVideo(fileId, senderId, file);
     }
   };
 
@@ -109,7 +109,7 @@ const useReceiver = () => {
     }
   };
 
-  const downloadVideo = async (fileId: string, senderId: string) => {
+  const downloadVideo = async (fileId: string, senderId: string, file: FileRes) => {
     if (!isConnected || role !== "receiver") return;
     if (!downloadQueue.isProcessing) downloadQueue.isProcessing = true;
     try {
@@ -117,13 +117,14 @@ const useReceiver = () => {
         url: `http://${connectionInfo.ip_address}:${connectionInfo.port}/download?id=${fileId}`,
         sessionId: connectionInfo.session_id,
         senderId,
+        fileInfo: file
       });
     } catch (err) {
       console.log(err);
     }finally{
       if (downloadQueue.traverse().length > 0) {
         const { fileId, senderId } = downloadQueue.pop();
-        downloadVideo(fileId, senderId);
+        downloadVideo(fileId, senderId, file);
       } else downloadQueue.isProcessing = false;
     }
   };
@@ -205,4 +206,3 @@ const useGetDirList = (
 };
 
 export { useGetDirList, useGetFiles, useReceiver };
-

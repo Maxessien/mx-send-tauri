@@ -1,5 +1,6 @@
 use std::{
-    path::{Path, PathBuf}, time::SystemTime
+    path::{Path, PathBuf},
+    time::SystemTime,
 };
 
 use axum::{
@@ -13,15 +14,19 @@ use futures_util::{lock::Mutex, StreamExt};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::{
-    fs::{File, metadata, remove_file},
-    io::AsyncWriteExt, sync::RwLock
+    fs::{metadata, remove_file, File},
+    io::AsyncWriteExt,
+    sync::RwLock,
 };
 use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 
-use crate::{file_types::{folder_name, parse_file_type}, utils::CancelOngoingDownload};
 use crate::utils::SessionId;
 use crate::{axum::AllowedFileList, file_types, utils::FileResWithType};
+use crate::{
+    file_types::{folder_name, parse_file_type},
+    utils::CancelOngoingDownload,
+};
 
 type HttpRequest = axum::http::Request<Body>;
 
@@ -148,14 +153,14 @@ pub async fn upload_file(
 
     {
         let mut reset = state.write().await;
-        *reset = CancelOngoingDownload {val: false}
+        *reset = CancelOngoingDownload { val: false }
     }
 
     while let Some(chunk) = body_stream.next().await {
         let cancelled = state.read().await;
         if cancelled.val {
             let mut reset = state.write().await;
-            *reset = CancelOngoingDownload {val: false};
+            *reset = CancelOngoingDownload { val: false };
             let _ = remove_file(save_dir).await;
             return StatusCode::OK;
         };
@@ -271,8 +276,6 @@ pub async fn download_from_filelist(
                             header::CONTENT_DISPOSITION,
                             format!("attachment; filename=\"{}\"", safe_name),
                         )
-                        .header("file_size", info.size)
-                        .header("file_name", info.name)
                         .header(
                             "file_type",
                             match info.file_type {
