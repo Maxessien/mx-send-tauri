@@ -63,6 +63,9 @@ const useWebsocket = () => {
         if (data.is_transferring && data.is_cancelled && data.sender_id === appSessionId) {
           await invoke("cancel_upload");
           emitCancelEvent(data, socket);
+        } else if (data.is_transferring && data.is_cancelled && data.sender_id !== appSessionId) {
+          await invoke("cancel_download");
+          emitCancelEvent(data, socket);
         }
 
         dispatch(updateTransferProgress(data));

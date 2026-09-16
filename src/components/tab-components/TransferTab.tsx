@@ -100,8 +100,8 @@ const TransferTab = () => {
 
       case "sending":
         if (f.is_transferring) {
-          await invoke("cancel_upload");
-          emitCancelEvent(f, socket);
+          if (role !== "sender") await invoke("cancel_upload");
+          emitCancelEvent(f, socket, role === "sender");
         } else cancelIncomingUpload(f);
         break;
 
