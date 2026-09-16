@@ -67,7 +67,7 @@ const useReceiver = () => {
   const pushDownload = (fileId: string, senderId: string, file: FileRes) => {
     downloadQueue.push({ fileId, senderId, file });
     if (!downloadQueue.isProcessing) {
-      const { fileId, senderId } = downloadQueue.pop();
+      const { fileId, senderId, file } = downloadQueue.pop();
       downloadVideo(fileId, senderId, file);
     }
   };
@@ -123,7 +123,7 @@ const useReceiver = () => {
       console.log(err);
     }finally{
       if (downloadQueue.traverse().length > 0) {
-        const { fileId, senderId } = downloadQueue.pop();
+        const { fileId, senderId, file } = downloadQueue.pop();
         downloadVideo(fileId, senderId, file);
       } else downloadQueue.isProcessing = false;
     }
