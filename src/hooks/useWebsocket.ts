@@ -5,6 +5,8 @@ import { RootState } from "../store";
 import { updateTransferProgress } from "../store-slices/allFilesSlice";
 import { setConnection } from "../store-slices/connectionSlice";
 import { Transfer } from "../types";
+import { invoke } from "@tauri-apps/api/core";
+import { emitCancelEvent } from "../utils/file-utils";
 
 
 export let socket: Socket | null = null
@@ -13,6 +15,7 @@ const useWebsocket = () => {
   const { connectionInfo, isConnected, role, count } = useSelector(
     (state: RootState) => state.connection,
   );
+  const appSessionId = useSelector((state: RootState)=> state.appSession)
   const dispatch = useDispatch();
   useEffect(() => {
     if (socket) {
@@ -55,7 +58,13 @@ const useWebsocket = () => {
           }),
         );
       });
-      socket.on("progress", (data: Transfer) => {
+      socket.on("progress", async(data: Transfer) => {
+
+        if (data.is_transferring && data.is_cancelled && data.sender_id === appSessionId) {
+          await invoke("cancel_upload");
+          emitCancelEvent(data, socket);
+        }
+
         dispatch(updateTransferProgress(data));
       });
     }

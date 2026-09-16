@@ -102,7 +102,7 @@ export const sortTransferred = (infos: FileTransferred[]) => {
   return sorted;
 };
 
-export const emitCancelEvent = (f: Transfer, socket: Socket | null) => {
+export const emitCancelEvent = (f: Transfer, socket: Socket | null, is_transferring = false) => {
   const {
     current,
     file_name,
@@ -121,7 +121,7 @@ export const emitCancelEvent = (f: Transfer, socket: Socket | null) => {
     total: file_size,
     sender_id,
     is_cancelled: true,
-    is_transferring: false,
+    is_transferring,
     last_modified,
     type,
   } as Transfer);
@@ -155,10 +155,10 @@ export const checkFieldsInObj = <T extends object>(
 export const hasUpdate = async ({version, show}: {version: string, show: boolean}, updateSettings: (latest: string, show: boolean)=> void) => {
   try {
     const appVersion = await getVersion();
-    
+
     const GITHUB_RELEASE_API =
     "https://api.github.com/repos/Maxessien/mx-send-tauri/releases/latest";
-    
+
     const res = await fetch(GITHUB_RELEASE_API, { method: "GET", signal: AbortSignal.timeout(10000) });
 
     if (!res.ok) throw new Error("Failed to fetch latest release")

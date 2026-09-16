@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 import { useSelector } from "react-redux";
@@ -34,8 +34,8 @@ export const TransferTabItem = ({
     total,
   } = file;
   return (
-    <div className="flex w-full gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
-      <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
+    <div className="flex w-full gap-2 sm:gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
+      <div className="sm:w-15 min-w-10 w-8 aspect-square rounded-md overflow-hidden">
         <img
           className="object-cover object-center w-full h-full"
           src={
@@ -46,8 +46,8 @@ export const TransferTabItem = ({
           alt={`${file_type || type || "file"} preview icon`}
         />
       </div>
-      <div className="space-y-2 flex-1">
-        <p className="sm:text-base text-sm line-clamp-2 font-medium text-left">
+      <div className="space-y-2 max-w-[calc(100%-95px)] sm:max-w-[calc(100%-150px)] flex-1">
+        <p className="sm:text-base wrap-break-word text-sm line-clamp-2 font-medium text-left">
           {file_name}
         </p>
         <p className="text-sm line-clamp-2 font-medium text-left">
@@ -74,6 +74,7 @@ const TransferTab = () => {
     (state: RootState) => state.allFiles.transferring,
   );
   const appSessionId = useSelector((state: RootState) => state.appSession);
+  const { role } = useSelector((state: RootState) => state.connection);
   const [activeTransferTab, setActiveTransferTab] = useState<
     "sending" | "receiving"
   >("receiving");
@@ -92,8 +93,8 @@ const TransferTab = () => {
     switch (activeTransferTab) {
       case "receiving":
         if (f.is_transferring) {
-          await invoke("cancel_download");
-          emitCancelEvent(f, socket);
+          if (role !== "sender") await invoke("cancel_download");
+          emitCancelEvent(f, socket, role === "sender");
         } else cancelIncomingDownload(f);
         break;
 
@@ -108,19 +109,6 @@ const TransferTab = () => {
         break;
     }
   };
-
-  // useEffect(() => {
-  //   (async () => {
-  //     const stallItm = transferring.find(
-  //       ({ is_cancelled, is_transferring }) => is_cancelled && is_transferring,
-  //     );
-
-  //     if (stallItm && stallItm.sender_id === appSessionId) {
-  //       await invoke("cancel_upload");
-  //       emitCancelEvent(stallItm, socket);
-  //     }
-  //   })();
-  // }, [transferring]);
 
   return (
     <section className="w-full space-y-3">
@@ -155,7 +143,6 @@ const TransferTab = () => {
           transferring
             .filter(({ sender_id }) => tabFilter(sender_id))
             .map((file) => {
-              console.log(file);
               const { file_name, file_path, current, total, is_cancelled } =
                 file;
               return (
