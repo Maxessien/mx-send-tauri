@@ -16,6 +16,8 @@ use walkdir::WalkDir;
 use crate::axum;
 use crate::file_types::{self, get_file_type};
 use crate::handler;
+use crate::handler::FileType;
+use crate::utils::get_home_dir;
 use crate::utils::*;
 
 #[tauri::command]
@@ -248,7 +250,7 @@ pub async fn download_file_from_sender(
         file_name,
         file_size,
         file_path,
-        last_modified,
+        last_modified: _,
     } = file_info;
 
     let mut download_dir = match file_types::get_save_dir(&app_handle).await {
@@ -532,4 +534,25 @@ pub async fn list_dir(
     })
     .await
     .map_err(|e| format!("Thread operation failed: {}", e))?
+}
+
+#[tauri::command]
+pub fn get_transfer_path(
+    file_name: String,
+    file_type: FileType,
+    app: tauri::AppHandle,
+) -> Result<PathBuf, String> {
+    let home = get_home_dir(&app).join("MxSend");
+    let path: PathBuf = match file_type {
+        FileType::Audio => home.join("audio").join(file_name),
+        FileType::Document => home.join("document").join(file_name),
+        FileType::Video => home.join("video").join(file_name),
+        FileType::Image => home.join("image").join(file_name),
+    };
+
+    if path.exists() {
+        Ok(path)
+    } else {
+        Err("Path does not exist".to_string())
+    }
 }

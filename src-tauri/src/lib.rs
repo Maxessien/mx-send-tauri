@@ -1,12 +1,11 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 use crate::axum::AllowedFileList;
+use axum_server::Handle;
 use futures_util::lock::Mutex;
+use std::net::SocketAddr;
 use tokio::sync::RwLock;
 use uuid::Uuid;
-use std::net::SocketAddr;
-use axum_server::Handle;
-
 
 pub(crate) mod axum;
 pub(crate) mod commands;
@@ -38,12 +37,13 @@ pub fn run() {
             commands::save_traverse_cache,
             commands::cancel_upload,
             commands::cancel_download,
+            commands::get_transfer_path
         ])
         .manage(Mutex::new(AllowedFileList { list: Vec::new() }))
         .manage(Mutex::new(utils::SessionId(Uuid::new_v4())))
         .manage(Mutex::new(None::<Handle<SocketAddr>>))
-        .manage(RwLock::new(utils::CancelOngoingUpload {val: false}))
-        .manage(RwLock::new(utils::CancelOngoingDownload {val: false}))
+        .manage(RwLock::new(utils::CancelOngoingUpload { val: false }))
+        .manage(RwLock::new(utils::CancelOngoingDownload { val: false }))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
