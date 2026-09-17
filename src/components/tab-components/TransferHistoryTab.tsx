@@ -7,6 +7,8 @@ import {
   formatFileSize,
   sortTransferred,
 } from "../../utils/file-utils";
+import Button from "../reusable-components/Button";
+import { openPath } from "@tauri-apps/plugin-opener";
 
 const TransferHistoryTab = () => {
   const { transferred } = useSelector((state: RootState) => state.allFiles);
@@ -24,6 +26,7 @@ const TransferHistoryTab = () => {
       for (let info in sorted.raw) {
         m.push(sorted.raw[info]);
       }
+      m.reverse()
       setSorted((state) => ({ ...state, merged: m }));
     })();
   }, [sorted.raw]);
@@ -65,7 +68,7 @@ const TransferHistoryTab = () => {
                     historyActiveTab === "received" ? isReceived : !isReceived,
                   )
                   .map((f) => {
-                    const { file_name, file_size, type } = f;
+                    const { file_name, file_size, type, file_path } = f;
                     return (
                       <div className="flex relative w-full gap-2 sm:gap-4 justify-between items-center bg-(--main-tertiary) hover:bg-(--main-tertiary-light) transition-all duration-200 shadow-[inset_0px_0px_10px_-8px_var(--text-secondary)] px-3 py-2 rounded-md">
                         <div className="sm:w-15 sm:min-w-15 w-8 aspect-square rounded-md overflow-hidden">
@@ -75,14 +78,15 @@ const TransferHistoryTab = () => {
                             alt="Image"
                           />
                         </div>
-                        <div className="space-y-2 max-w-[calc(100%-58px)] sm:max-w-[calc(100%-85px)]  flex-1">
-                          <p className="sm:text-base text-sm line-clamp-2 wrap-break-word font-medium text-left">
+                        <div className="space-y-2 max-w-[calc(100%-120px)] sm:max-w-[calc(100%-200px)]  flex-1">
+                          <p className="sm:text-base text-sm w-full line-clamp-2 wrap-break-word font-medium text-left">
                             {file_name}
                           </p>
                           <p className="text-sm line-clamp-2 wrap-break-word font-medium text-left">
                             {formatFileSize(file_size)}
                           </p>
                         </div>
+                        <Button size="small" rounded="rounded-md" attrs={{onClick: async ()=> await openPath(file_path)}}>Open</Button>
                       </div>
                     );
                   })}

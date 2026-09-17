@@ -161,12 +161,12 @@ const TransferTab = () => {
                       </p>
                     </div>
                   )}
-                  <div
+                  {!is_cancelled && <div
                     style={{
                       width: `${current >= total ? "100" : (current / total) * 100}%`,
                     }}
                     className="absolute bg-[rgb(30,58,138,0.3)] h-full z-5 top-0 left-0"
-                  ></div>
+                  ></div>}
                 </div>
               );
             })

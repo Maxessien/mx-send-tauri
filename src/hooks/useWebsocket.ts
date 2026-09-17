@@ -60,10 +60,10 @@ const useWebsocket = () => {
       });
       socket.on("progress", async(data: Transfer) => {
 
-        if (data.is_transferring && data.is_cancelled && data.sender_id === appSessionId) {
+        if (data.is_transferring && data.is_cancelled && data.sender_id === appSessionId && role !== "sender") {
           await invoke("cancel_upload");
           emitCancelEvent(data, socket);
-        } else if (data.is_transferring && data.is_cancelled && data.sender_id !== appSessionId) {
+        } else if (data.is_transferring && data.is_cancelled && data.sender_id !== appSessionId && role !== "sender") {
           await invoke("cancel_download");
           emitCancelEvent(data, socket);
         }
