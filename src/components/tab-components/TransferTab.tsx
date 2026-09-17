@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FaArrowLeft } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 import { useSelector } from "react-redux";
